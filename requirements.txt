@@ -4,3 +4,5 @@ passlib==1.7.1
 argon2_cffi==18.1.0
 Flask-API==1.1b2
 ecdsa==0.13
+requests==2.18.4
+urllib3==1.22

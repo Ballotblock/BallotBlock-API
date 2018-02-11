@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 #
-# src/server.py
+# src/interface/server.py
 # Authors:
 #     Samuel Vargas
+#     Alex Gao
 
-from flask import Flask
+from flask import Flask,request,jsonify,make_response
+from src.voter import  voter
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
@@ -24,6 +26,7 @@ def login():
     :return:
     """
     raise NotImplementedError()
+
 
 #
 # Elections
@@ -73,8 +76,45 @@ def election_list():
     """
     Returns a list of elections that any user can
     participate in.
+    A user can participate in an election if that user
+    holds a ballot for that election.
+    Here this method will return a list of ballots that a user currently holds
+
+    Example of an api call
+    http://127.0.0.1:5000/api/election/list?id=someId
+
+    Note that this initial implementation is likely change as
+    the login route above is implemented. Instead we would
+    extract the id from the token created by logging in first
     """
-    raise NotImplementedError()
+    id = request.args.get('id')
+    user = voter(id)
+    json = user.get_ballots()
+    return  jsonify(json),200
+
+@app.route("/api/election/<id>/get", methods=["GET", "POST"])
+def election_get(id):
+    """
+    Gets all the details of the elections:
+        start date, end date, propositions, title
+    So the front end can fill in the interface components
+
+    Example of an api call:
+    http://127.0.0.1:5000/api/election/id/get?id=someId
+
+    One that should work for and return some json data:
+    http://127.0.0.1:5000/api/election/ASASU2017 Election/get?id=Alice
+
+    Note that this initial implementation is likely change as
+    the login route above is implemented. Instead we would
+    extract the id from the token created by logging in first
+    The token would be passed in the request in perhaps bearer or cookie
+    """
+    electionId = id;
+    userId = request.args.get('id')
+    user = voter(userId)
+    json = user.get_elections(electionId)
+    return jsonify(json),200
 
 @app.route("/api/election/<id>/join", methods=["GET", "POST"])
 def election_join():
@@ -90,7 +130,6 @@ def election_get_ballot_schema():
     """
     raise NotImplementedError()
 
-
 @app.route("/api/election/<id>/vote", methods=["GET", "POST"])
 def election_vote():
     """
@@ -105,3 +144,6 @@ def election_vote():
     may not cast votes. Only create elections.
     """
     raise NotImplementedError()
+
+
+app.run()
