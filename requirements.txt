@@ -1,0 +1,6 @@
+flask==0.12.2
+flask-login==0.4.0
+passlib==1.7.1
+argon2_cffi==18.1.0
+Flask-API==1.1b2
+ecdsa==0.13
