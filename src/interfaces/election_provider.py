@@ -6,6 +6,7 @@
 
 import abc
 
+
 class ElectionProvider(abc.ABC):
     def __init__(self):
         pass
