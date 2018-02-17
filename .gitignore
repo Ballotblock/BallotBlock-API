@@ -102,3 +102,7 @@ ENV/
 
 # Jet Brains IDEs
 .idea
+
+# Testing
+.pytest_cache/*
+lastfailed
