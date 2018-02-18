@@ -5,47 +5,52 @@
 #   Samuel Vargas
 #
 
+from flask import request
+from unittest.mock import MagicMock
+from src import httpcode
+import json
+import uuid
 import unittest
 import time
 import datetime
+
+import src.intermediary
 
 
 class CreateElectionTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
-
-        user_a = {
+    def setUpClass(self):
+        self.app = src.intermediary.start_test_sqlite(":memory:")
+        self.headers = {"Content-Type": "application/json"}
+        self.election_creator = {
             "username": "Sam",
             "password": "123456",
             "account_type": "election_creator"
         }
 
-        user_b = {
-            "username": "Paul",
-            "password": "hunter2",
-            "account_type": "voter"
-        }
-
-
         now = int(time.time())
-        ten_days_later = int((datetime.datetime.fromtimestamp(now) + datetime.timedelta(days=28)).timestamp())
+        ten_days_later = int((datetime.datetime.fromtimestamp(now) + datetime.timedelta(days=10)).timestamp())
 
-        election = {
+        self.election = {
+            "username": "Sam",
             "start_date": now,
-            "end_date": ten_days_later
+            "end_date": ten_days_later,
+            "title": "Color Shape Election",
+            "description": "This is a test election about favorite color / shape.",
+            "propositions": [
+                {
+                    "question": "What is your favorite color?",
+                    "choices": ["Red", "Green", "Blue", "Yellow"],
+                },
+                {
+                    "question": "What is your favorite shape?",
+                    "choices": ["Triangle", "Square", "Circle", "Diamond"],
+                }
+            ]
         }
 
-        propositions = [
-            {
-            "question": "What is your favorite color?",
-            "choices":  ["Red", "Green", "Blue", "Yellow"],
-            },
-            {
-            "question": "What is your favorite shape?",
-            "choices":  ["Triangle", "Square", "Circle", "Diamond"],
-            }
-        ]
+        self.sessionID = uuid.uuid4()
 
         # Tasks to complete for this integration test:
         # 1) Send request to server to create an election with user_a
