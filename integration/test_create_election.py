@@ -52,6 +52,38 @@ class CreateElectionTest(unittest.TestCase):
 
         self.sessionID = uuid.uuid4()
 
+    def test_user_can_create_election(self):
+        # Mockout the registration provider's is_user_registered()
+        src.intermediary.REGISTRATION_PROVIDER.is_user_registered = MagicMock(return_value=True)
+
+        # Log the election creator in
+        response = self.app.post("/api/login",
+                                 headers=self.headers,
+                                 data=json.dumps(self.election_creator))
+
+        expectedCode = httpcode.LOGIN_SUCCESSFUL.code
+        expectedMessage = httpcode.LOGIN_SUCCESSFUL.message
+        actualCode = response.status_code
+        actualMessage = response.data.decode("utf-8")
+        assert expectedCode == actualCode and actualMessage == expectedMessage, \
+            "Login should have been successful but failed."
+
+        # Verify we're now authenticated with the intermediary server
+        response = self.app.post("/api/login",
+                                 headers=self.headers,
+                                 data=json.dumps(self.election_creator))
+        expectedCode = httpcode.USER_ALREADY_AUTHENTICATED.code
+        expectedMessage = httpcode.USER_ALREADY_AUTHENTICATED.message
+        actualCode = response.status_code
+        actualMessage = response.data.decode("utf-8")
+        assert expectedCode == actualCode and actualMessage == expectedMessage, \
+            "Intermediary server should see our previous login."
+
+        # Send a request to create an election
+
+        # 4) Verify that when we query the server with our username
+        # 5) We recieve
+
         # Tasks to complete for this integration test:
         # 1) Send request to server to create an election with user_a
         # 2) user_b joins the election, receives a set of public private keys
