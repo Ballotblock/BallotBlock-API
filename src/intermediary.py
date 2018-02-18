@@ -20,17 +20,30 @@ SUBDIRECTORIES = [
 for subdirectory in SUBDIRECTORIES:
     sys.path.append(os.path.join(dir_path, subdirectory))
 
+#
+# src/intermediary.py
 # Authors:
 #     Samuel Vargas
 #     Alex Gao
 
-from flask import Flask,request,jsonify,make_response
-from src.voter import  voter
+from flask import Flask, request, jsonify
+from src.backend_type import BackendType
+from src import httpcode
+from src.voter import voter
+from src.sqlite3 import SQLiteElectionProvider
+from src.sessions import MemorySessionProvider
+from src.registration import RegistrationServerProvider
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
-NAME = "BallotBlock Registration API"
+NAME = "BallotBlock Intermediary Server"
 PORT = 8080
+BACKEND_TYPE = None
+
+# Miscellaneous providers
+ELECTION_PROVIDER = None
+SESSION_PROVIDER = MemorySessionProvider()
+REGISTRATION_PROVIDER = RegistrationServerProvider()
 
 app = Flask(__name__)
 
