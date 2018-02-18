@@ -87,32 +87,33 @@ def login() -> httpcode.HttpCode:
 #
 
 @app.route("/api/election/create", methods=["GET", "POST"])
-def election_create():
+def election_create() -> httpcode.HttpCode:
     """
     Allows an election creator (and an election creator only)
     to create a new election on the backend.
 
     If the election data is malformed, return an error.
 
-    The election creator should send:
+    The election creator should send the following in
+    JSON format:
 
-    ballot = {
-        election = {
-            "start_date": (unix_timestamp),
-            "end_state": (unix_timestamp),
-        },
+    Election create should double check that the user
+    has permission to create an election.
 
-        propositions = [
+    election = {
+        "username": "user creating the election"
+        "start_date": unix timestamp,
+        "end_date": unix timestamp,
+        "title": "2016 U.S. Presidential Election",
+        "description": "This is a test election about favorite color / shape.",
+        "propositions": [
             {
-                "question": "Favorite Letter?",
-                "choices": ["A", "B", "C", "D"],
+                "question": "What is your favorite color?",
+                "choices": ["Red", "Green", "Blue", "Yellow"],
             },
             {
-                "question": "Favorite Number?",
-                "choices": ["1", "2", "3", "4"],
-            },
-            {
-                ...
+                "question": "What is your favorite shape?",
+                "choices": ["Triangle", "Square", "Circle", "Diamond"],
             }
         ]
     }
@@ -123,7 +124,26 @@ def election_create():
         * End_Date comes before Start_Date
         * Extremely short voting periods (eg 1 second)
     """
-    raise NotImplementedError()
+
+    # Check if any JSON was supplied at all
+    content = request.get_json(silent=True, force=True)
+    if content is None:
+        return httpcode.MISSING_OR_MALFORMED_JSON
+
+    # TODO: Check if any parameters are missing
+
+    # Verify that user has logged in first
+    if content['username'] not in request.cookies:
+        return httpcode.LOG_IN_FIRST
+
+    # TODO: Verify that user is an election_creator and not a voter
+    # TODO Check if an election with this title already exists
+
+    if BACKEND_TYPE == BackendType.SQLite:
+        pass
+
+    return httpcode.ELECTION_CREATED_SUCCESSFULLY
+
 
 @app.route("/api/election/list", methods=["GET", "POST"])
 def election_list():
@@ -144,7 +164,8 @@ def election_list():
     id = request.args.get('id')
     user = voter(id)
     json = user.get_ballots()
-    return  jsonify(json),200
+    return jsonify(json), 200
+
 
 @app.route("/api/election/<id>/get", methods=["GET", "POST"])
 def election_get(id):
@@ -168,7 +189,8 @@ def election_get(id):
     userId = request.args.get('id')
     user = voter(userId)
     json = user.get_elections(electionId)
-    return jsonify(json),200
+    return jsonify(json), 200
+
 
 @app.route("/api/election/<id>/join", methods=["GET", "POST"])
 def election_join():
@@ -177,12 +199,14 @@ def election_join():
     """
     raise NotImplementedError()
 
+
 @app.route("/api/election/<id>/schema", methods=["GET", "POST"])
 def election_get_ballot_schema():
     """
     Returns a 'ballot' json object containing several propositions
     """
     raise NotImplementedError()
+
 
 @app.route("/api/election/<id>/vote", methods=["GET", "POST"])
 def election_vote():
@@ -200,4 +224,5 @@ def election_vote():
     raise NotImplementedError()
 
 
-app.run()
+if __name__ == '__main__':
+    raise NotImplementedError("main() not implemented yet")
