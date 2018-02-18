@@ -1,6 +1,25 @@
 #!/usr/bin/env python3
 #
-# src/interface/server.py
+# Path modification trick to allow you to execute the program
+# using either:
+#     * python -m src.intermediary
+#     * python intermediary.py
+
+import sys
+import os
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+# Subdirectories
+SUBDIRECTORIES = [
+    "..",
+    "interfaces",
+    "sqlite3",
+]
+
+for subdirectory in SUBDIRECTORIES:
+    sys.path.append(os.path.join(dir_path, subdirectory))
+
 # Authors:
 #     Samuel Vargas
 #     Alex Gao
