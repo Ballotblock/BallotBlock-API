@@ -47,17 +47,6 @@ REGISTRATION_PROVIDER = RegistrationServerProvider()
 
 app = Flask(__name__)
 
-@app.route("/api/login/", methods=["GET", "POST"])
-def login():
-    """
-    Creates a session_id that prevents the user from having to
-    continually reauthenticate each time they make a
-    subsequent request. The user should send this secret
-    session id (essentially a cookie) each time they want
-    to communicate with the intermediary server.
-    :return:
-    """
-    raise NotImplementedError()
 
 def start_test_sqlite(db_path: str):
     ELECTION_PROVIDER = SQLiteElectionProvider(db_path)
@@ -67,6 +56,30 @@ def start_test_sqlite(db_path: str):
     return test_app
 
 
+@app.route("/api/login", methods=["GET", "POST"])
+def login() -> httpcode.HttpCode:
+    # JSON is missing or malformed
+    content = request.get_json(silent=True, force=True)
+    if content is None:
+        return httpcode.MISSING_OR_MALFORMED_JSON
+
+    # At least one required parameter is missing
+    required_keys = ("username", "password", "account_type")
+    key_is_missing = all(key not in content.keys() for key in required_keys)
+    if key_is_missing:
+        return httpcode.MISSING_LOGIN_PARAMETERS
+
+    # The registration server says this user is invalid:
+    if not REGISTRATION_PROVIDER.is_user_registered(content['username'], content['password']):
+        return httpcode.USER_NOT_REGISTERED
+
+    # The user is already authenticated
+    if SESSION_PROVIDER.is_authenticated(content['username']):
+        return httpcode.USER_ALREADY_AUTHENTICATED
+
+    # All tests passed, authenticate the user.
+    SESSION_PROVIDER.authenticate_user(content['username'])
+    return httpcode.LOGIN_SUCCESSFUL
 
 
 #
