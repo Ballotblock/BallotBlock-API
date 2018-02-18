@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# src/server.py
+# src/interfaces/election_provider.py
 # Authors:
 #     Samuel Vargas
 
