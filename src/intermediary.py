@@ -59,6 +59,15 @@ def login():
     """
     raise NotImplementedError()
 
+def start_test_sqlite(db_path: str):
+    ELECTION_PROVIDER = SQLiteElectionProvider(db_path)
+    BACKEND_TYPE = BackendType['SQLite']
+    test_app = app.test_client()
+    test_app.testing = True
+    return test_app
+
+
+
 
 #
 # Elections
