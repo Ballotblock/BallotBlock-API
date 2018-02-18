@@ -6,7 +6,6 @@
 
 from src.interfaces.election_provider import ElectionProvider
 
-
 class SQLiteElectionProvider(ElectionProvider):
     def __init__(self, db_path):
         super().__init__()
@@ -15,7 +14,7 @@ class SQLiteElectionProvider(ElectionProvider):
     def get_election_details(self, election_id: str):
         pass
 
-    def get_election_ballots(self, id: str):
+    def get_election_ballots(self, election_id: str):
         pass
 
     def get_election_single_ballot(self, election_id: str, voter_id: str):
