@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 #
 # Path modification trick to allow you to execute the program
@@ -27,16 +28,17 @@ for subdirectory in SUBDIRECTORIES:
 #     Alex Gao
 
 from flask import Flask, request, jsonify
+from src import app
 from src.backend_type import BackendType
 from src import httpcode
-from src.voter import voter
+from src.voter import Voter
 from src.sqlite3 import SQLiteElectionProvider
 from src.sessions import MemorySessionProvider
 from src.registration import RegistrationServerProvider
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
-NAME = "BallotBlock Intermediary Server"
+NAME = "BallotBlock API"
 PORT = 8080
 BACKEND_TYPE = None
 
@@ -45,7 +47,6 @@ ELECTION_PROVIDER = None
 SESSION_PROVIDER = MemorySessionProvider()
 REGISTRATION_PROVIDER = RegistrationServerProvider()
 
-app = Flask(__name__)
 
 
 def start_test_sqlite(db_path: str):
@@ -54,6 +55,12 @@ def start_test_sqlite(db_path: str):
     test_app = app.test_client()
     test_app.testing = True
     return test_app
+
+
+@app.route("/")
+def index():
+    return("BallotBlock API")
+
 
 
 @app.route("/api/login", methods=["GET", "POST"])
@@ -91,15 +98,11 @@ def election_create() -> httpcode.HttpCode:
     """
     Allows an election creator (and an election creator only)
     to create a new election on the backend.
-
     If the election data is malformed, return an error.
-
     The election creator should send the following in
     JSON format:
-
     Election create should double check that the user
     has permission to create an election.
-
     election = {
         "username": "user creating the election"
         "start_date": unix timestamp,
@@ -117,7 +120,6 @@ def election_create() -> httpcode.HttpCode:
             }
         ]
     }
-
     Possible error types include:
         * Question without choices
         * Choices without questions
@@ -153,10 +155,8 @@ def election_list():
     A user can participate in an election if that user
     holds a ballot for that election.
     Here this method will return a list of ballots that a user currently holds
-
     Example of an api call
     http://127.0.0.1:5000/api/election/list?id=someId
-
     Note that this initial implementation is likely change as
     the login route above is implemented. Instead we would
     extract the id from the token created by logging in first
@@ -173,13 +173,10 @@ def election_get(id):
     Gets all the details of the elections:
         start date, end date, propositions, title
     So the front end can fill in the interface components
-
     Example of an api call:
     http://127.0.0.1:5000/api/election/id/get?id=someId
-
     One that should work for and return some json data:
     http://127.0.0.1:5000/api/election/ASASU2017 Election/get?id=Alice
-
     Note that this initial implementation is likely change as
     the login route above is implemented. Instead we would
     extract the id from the token created by logging in first
@@ -213,16 +210,11 @@ def election_vote():
     """
     Allows the user to cast a vote (sending the contents
     of their filled out ballot.
-
     If their ballot is missing or contains invalid data return
     an error. Otherwise accept their ballot and store it
     on the backend.
-
     Users may only cast their vote ONCE. Election creators
     may not cast votes. Only create elections.
     """
     raise NotImplementedError()
 
-
-if __name__ == '__main__':
-    raise NotImplementedError("main() not implemented yet")
