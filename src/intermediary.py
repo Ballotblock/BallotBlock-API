@@ -1,5 +1,4 @@
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 #
 # Path modification trick to allow you to execute the program
 # using either:
@@ -31,10 +30,12 @@ from flask import Flask, request, jsonify
 from src import app
 from src.backend_type import BackendType
 from src import httpcode
+from src.validator import ElectionJsonValidator
 from src.voter import Voter
-from src.sqlite3 import SQLiteElectionProvider
 from src.sessions import MemorySessionProvider
 from src.registration import RegistrationServerProvider
+from src.sqlite3 import SQLiteElectionProvider
+#from src.sqlite3 i#mport BackendInitializer
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
@@ -46,11 +47,12 @@ BACKEND_TYPE = None
 ELECTION_PROVIDER = None
 SESSION_PROVIDER = MemorySessionProvider()
 REGISTRATION_PROVIDER = RegistrationServerProvider()
-
+BACKEND_INITIALIZER = None
 
 
 def start_test_sqlite(db_path: str):
     ELECTION_PROVIDER = SQLiteElectionProvider(db_path)
+    BACKEND_INITIALIZER = None
     BACKEND_TYPE = BackendType['SQLite']
     test_app = app.test_client()
     test_app.testing = True
@@ -59,8 +61,7 @@ def start_test_sqlite(db_path: str):
 
 @app.route("/")
 def index():
-    return("BallotBlock API")
-
+    return ("BallotBlock API")
 
 
 @app.route("/api/login", methods=["GET", "POST"])
@@ -132,17 +133,20 @@ def election_create() -> httpcode.HttpCode:
     if content is None:
         return httpcode.MISSING_OR_MALFORMED_JSON
 
-    # TODO: Check if any parameters are missing
-
-    # Verify that user has logged in first
-    if content['username'] not in request.cookies:
+    # Verify the user has logged in first
+    if not SESSION_PROVIDER.is_authenticated(content['username']):
         return httpcode.LOG_IN_FIRST
 
-    # TODO: Verify that user is an election_creator and not a voter
-    # TODO Check if an election with this title already exists
+    # User is an election creator
+    raise NotImplementedError()
 
-    if BACKEND_TYPE == BackendType.SQLite:
-        pass
+    # Ensure election JSON is valid
+    validator = ElectionJsonValidator(content)
+    if not validator.isValid():
+        return validator.reason(), 400
+
+    # Ensure election with this title does not already exist.
+    raise NotImplementedError()
 
     return httpcode.ELECTION_CREATED_SUCCESSFULLY
 
@@ -217,4 +221,3 @@ def election_vote():
     may not cast votes. Only create elections.
     """
     raise NotImplementedError()
-
