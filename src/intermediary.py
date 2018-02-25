@@ -94,15 +94,19 @@ def login() -> httpcode.HttpCode:
 # Elections
 #
 
-@app.route("/api/election/create", methods=["GET", "POST"])
+@app.route("/api/election", methods=["POST"])
 def election_create() -> httpcode.HttpCode:
     """
+    
+    "create" part at the end of the route removed to follow REST standard.
+    POST now implies that you are creating the resource "election"
+    
     Allows an election creator (and an election creator only)
     to create a new election on the backend.
     If the election data is malformed, return an error.
     The election creator should send the following in
     JSON format:
-    Election create should double check that the user
+    Election should double check that the user
     has permission to create an election.
     election = {
         "username": "user creating the election"
@@ -151,9 +155,13 @@ def election_create() -> httpcode.HttpCode:
     return httpcode.ELECTION_CREATED_SUCCESSFULLY
 
 
-@app.route("/api/election/list", methods=["GET", "POST"])
+@app.route("/api/election/", methods=["GET"])
 def election_list():
     """
+    
+    "list" part in the route removed, GET request means
+    you are going to get a list of all the elections associated with the user.
+    
     Returns a list of elections that any user can
     participate in.
     A user can participate in an election if that user
@@ -171,7 +179,7 @@ def election_list():
     return jsonify(json), 200
 
 
-@app.route("/api/election/<id>/get", methods=["GET", "POST"])
+@app.route("/api/election/<id>", methods=["GET"])
 def election_get(id):
     """
     Gets all the details of the elections:
@@ -193,15 +201,17 @@ def election_get(id):
     return jsonify(json), 200
 
 
-@app.route("/api/election/<id>/join", methods=["GET", "POST"])
+@app.route("/api/ballot", methods=["POST"])
 def election_join():
     """
     Allows the user to enter an election.
+    When the user creates a ballot by doing a post request, a user can
+    then participate in the election
     """
     raise NotImplementedError()
 
 
-@app.route("/api/election/<id>/schema", methods=["GET", "POST"])
+@app.route("/api/ballot", methods=["GET"])
 def election_get_ballot_schema():
     """
     Returns a 'ballot' json object containing several propositions
@@ -209,7 +219,7 @@ def election_get_ballot_schema():
     raise NotImplementedError()
 
 
-@app.route("/api/election/<id>/vote", methods=["GET", "POST"])
+@app.route("/api/vote", methods=["POST"])
 def election_vote():
     """
     Allows the user to cast a vote (sending the contents
