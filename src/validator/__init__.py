@@ -1,0 +1,1 @@
+from .election_json_validator import ElectionJsonValidator
