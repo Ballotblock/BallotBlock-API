@@ -5,7 +5,6 @@
 #   Samuel Vargas
 #
 
-from flask import request
 from unittest.mock import MagicMock
 from src import httpcode
 import json
