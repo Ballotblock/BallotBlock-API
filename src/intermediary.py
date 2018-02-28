@@ -35,7 +35,6 @@ from src.voter import Voter
 from src.sessions import MemorySessionProvider
 from src.registration import RegistrationServerProvider
 from src.sqlite3 import SQLiteElectionProvider
-#from src.sqlite3 i#mport BackendInitializer
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
@@ -43,12 +42,16 @@ NAME = "BallotBlock API"
 PORT = 8080
 BACKEND_TYPE = None
 
-# Miscellaneous providers
+# Initializers
+BACKEND_INITIALIZER = None
+
+# Providers
 ELECTION_PROVIDER = None
 SESSION_PROVIDER = MemorySessionProvider()
 REGISTRATION_PROVIDER = RegistrationServerProvider()
-BACKEND_INITIALIZER = None
 
+# Validators
+ELECTION_JSON_VALIDATOR = ElectionJsonValidator()
 
 def start_test_sqlite(db_path: str):
     ELECTION_PROVIDER = SQLiteElectionProvider(db_path)
@@ -61,7 +64,7 @@ def start_test_sqlite(db_path: str):
 
 @app.route("/")
 def index():
-    return ("BallotBlock API")
+    return "BallotBlock API"
 
 
 @app.route("/api/login", methods=["GET", "POST"])
@@ -97,6 +100,7 @@ def login() -> httpcode.HttpCode:
 @app.route("/api/election", methods=["POST"])
 def election_create() -> httpcode.HttpCode:
     """
+<<<<<<< Updated upstream
     
     "create" part at the end of the route removed to follow REST standard.
     POST now implies that you are creating the resource "election"
@@ -130,12 +134,23 @@ def election_create() -> httpcode.HttpCode:
         * Choices without questions
         * End_Date comes before Start_Date
         * Extremely short voting periods (eg 1 second)
+=======
+    Allows an election creator to create a new election on the backend.
+
+    See integration/test_create_election.py and
+    test/test_election_json_validator.py for details
+    about the expected json election format.
+>>>>>>> Stashed changes
     """
 
     # Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
     if content is None:
         return httpcode.MISSING_OR_MALFORMED_JSON
+
+    # Verify that this user is logged in, we shouldn't need
+    # their username, password, or account-type again.
+    # Tie their cookies to their login 
 
     # Verify the user has logged in first
     if not SESSION_PROVIDER.is_authenticated(content['username']):
