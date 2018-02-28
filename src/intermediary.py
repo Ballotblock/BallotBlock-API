@@ -100,47 +100,11 @@ def login() -> httpcode.HttpCode:
 @app.route("/api/election", methods=["POST"])
 def election_create() -> httpcode.HttpCode:
     """
-<<<<<<< Updated upstream
-    
-    "create" part at the end of the route removed to follow REST standard.
-    POST now implies that you are creating the resource "election"
-    
-    Allows an election creator (and an election creator only)
-    to create a new election on the backend.
-    If the election data is malformed, return an error.
-    The election creator should send the following in
-    JSON format:
-    Election should double check that the user
-    has permission to create an election.
-    election = {
-        "username": "user creating the election"
-        "start_date": unix timestamp,
-        "end_date": unix timestamp,
-        "title": "2016 U.S. Presidential Election",
-        "description": "This is a test election about favorite color / shape.",
-        "propositions": [
-            {
-                "question": "What is your favorite color?",
-                "choices": ["Red", "Green", "Blue", "Yellow"],
-            },
-            {
-                "question": "What is your favorite shape?",
-                "choices": ["Triangle", "Square", "Circle", "Diamond"],
-            }
-        ]
-    }
-    Possible error types include:
-        * Question without choices
-        * Choices without questions
-        * End_Date comes before Start_Date
-        * Extremely short voting periods (eg 1 second)
-=======
     Allows an election creator to create a new election on the backend.
 
     See integration/test_create_election.py and
     test/test_election_json_validator.py for details
     about the expected json election format.
->>>>>>> Stashed changes
     """
 
     # Check if any JSON was supplied at all
