@@ -53,7 +53,13 @@ REGISTRATION_PROVIDER = RegistrationServerProvider()
 # Validators
 ELECTION_JSON_VALIDATOR = ElectionJsonValidator()
 
+
+# TODO: Allow devs to pass in the PROVIDERS / INITAILIZERS so they can stub them out.
 def start_test_sqlite(db_path: str):
+    global ELECTION_PROVIDER
+    global BACKEND_INITIALIZER
+    global BACKEND_TYPE
+
     ELECTION_PROVIDER = SQLiteElectionProvider(db_path)
     BACKEND_INITIALIZER = None
     BACKEND_TYPE = BackendType['SQLite']
