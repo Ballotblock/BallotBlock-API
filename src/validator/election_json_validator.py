@@ -7,7 +7,7 @@
 
 import datetime
 from typing import Dict
-from src.interfaces.json_validator import JsonValidator, JsonValidity
+from src.interfaces.json_validator import JsonValidator
 
 _REQUIRED_KEYS = (
     "start_date", "end_date", "title",
@@ -20,14 +20,12 @@ _REQUIRED_PROPOSITION_KEYS = (
 
 _MINIMUM_ELECTION_LENGTH = datetime.timedelta(days=1).total_seconds()
 
-IS_VALID = \
-    JsonValidity("All required keys present. Data is valid.", True)
-
-MISSING_KEY = \
-    JsonValidity("At least one of the required keys {0} are missing".format(_REQUIRED_KEYS), False)
+IS_VALID = "All required keys present. Data is valid."
+MISSING_KEY = "At least one of the required keys {0} are missing".format(_REQUIRED_KEYS)
 
 
 class ElectionJsonValidator(JsonValidator):
+
     def __init__(self):
         self.valid = False
         self.REQUIRED_KEYS = (
@@ -36,7 +34,7 @@ class ElectionJsonValidator(JsonValidator):
             "propositions"
         )
 
-    def is_valid(self, election_json: Dict) -> JsonValidity:
+    def is_valid(self, election_json: Dict) -> (bool, str):
         """
         Iterates through the election_json dictionary and verifies that
         all required data is provided and valid.
@@ -51,7 +49,7 @@ class ElectionJsonValidator(JsonValidator):
         # Ensure all keys are present in election json
         at_least_one_key_missing = all(k not in election_json.keys() for k in _REQUIRED_KEYS)
         if at_least_one_key_missing:
-            return MISSING_KEY
+            return False, MISSING_KEY
 
         # Time Validation
 
