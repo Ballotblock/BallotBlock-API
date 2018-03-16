@@ -103,7 +103,7 @@ def login() -> httpcode.HttpCode:
 # Elections
 #
 
-@app.route("/api/election", methods=["POST"])
+@app.route("/api/election/create", methods=["POST"])
 def election_create() -> httpcode.HttpCode:
     """
     Allows an election creator to create a new election on the backend.
@@ -118,24 +118,21 @@ def election_create() -> httpcode.HttpCode:
     if content is None:
         return httpcode.MISSING_OR_MALFORMED_JSON
 
-    # Verify that this user is logged in, we shouldn't need
-    # their username, password, or account-type again.
-    # Tie their cookies to their login 
-
     # Verify the user has logged in first
     if not SESSION_PROVIDER.is_authenticated(content['username']):
         return httpcode.LOG_IN_FIRST
 
-    # User is an election creator
-    raise NotImplementedError()
-
     # Ensure election JSON is valid
-    validator = ElectionJsonValidator(content)
-    if not validator.isValid():
-        return validator.reason(), 400
+    valid, reason = ELECTION_JSON_VALIDATOR.is_valid(content)
+    if not valid:
+        return reason
 
-    # Ensure election with this title does not already exist.
-    raise NotImplementedError()
+    # Disallow the creation of an election if an election with this title already exists
+    if ELECTION_PROVIDER.find_election_by_title(content['title']) is not None:
+        return httpcode.ELECTION_WITH_TITLE_ALREADY_EXISTS
+
+    # Create an election, report an error if there was an error creating the election
+    ELECTION_PROVIDER.create_election(content)
 
     return httpcode.ELECTION_CREATED_SUCCESSFULLY
 
