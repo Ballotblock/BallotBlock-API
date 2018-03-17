@@ -34,7 +34,7 @@ from src.validator import ElectionJsonValidator
 from src.voter import Voter
 from src.sessions import MemorySessionProvider
 from src.registration import RegistrationServerProvider
-from src.sqlite3 import SQLiteElectionProvider
+from src.sqlite import SQLiteBackendIO
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
@@ -42,11 +42,11 @@ NAME = "BallotBlock API"
 PORT = 8080
 BACKEND_TYPE = None
 
-# Initializers
+# Initializer
 BACKEND_INITIALIZER = None
 
 # Providers
-ELECTION_PROVIDER = None
+BACKEND_IO = None
 SESSION_PROVIDER = MemorySessionProvider()
 REGISTRATION_PROVIDER = RegistrationServerProvider()
 
@@ -56,11 +56,11 @@ ELECTION_JSON_VALIDATOR = ElectionJsonValidator()
 
 # TODO: Allow devs to pass in the PROVIDERS / INITAILIZERS so they can stub them out.
 def start_test_sqlite(db_path: str):
-    global ELECTION_PROVIDER
+    global BACKEND_IO
     global BACKEND_INITIALIZER
     global BACKEND_TYPE
 
-    ELECTION_PROVIDER = SQLiteElectionProvider(db_path)
+    BACKEND_IO = SQLiteBackendIO(db_path)
     BACKEND_INITIALIZER = None
     BACKEND_TYPE = BackendType['SQLite']
     test_app = app.test_client()
@@ -128,11 +128,11 @@ def election_create() -> httpcode.HttpCode:
         return reason
 
     # Disallow the creation of an election if an election with this title already exists
-    if ELECTION_PROVIDER.find_election_by_title(content['title']) is not None:
+    if BACKEND_IO.find_election_by_title(content['title']) is not None:
         return httpcode.ELECTION_WITH_TITLE_ALREADY_EXISTS
 
     # Create an election, report an error if there was an error creating the election
-    ELECTION_PROVIDER.create_election(content)
+    BACKEND_IO.create_election(content)
 
     return httpcode.ELECTION_CREATED_SUCCESSFULLY
 
