@@ -14,10 +14,9 @@ class BackendIO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_election_details(self, election_id: str) -> Dict:
+    def get_election_by_title(self, election_title: str) -> Optional[Dict]:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def find_election_by_title(self, election_title: str) -> Optional[Dict]:
-        # Given a particular title,
-        raise NotImplementedError()
+    def get_master_ballot_by_title(self, election_title: str) -> Optional[Dict]:
+        raise NotImplementedError
