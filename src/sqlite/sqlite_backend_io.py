@@ -16,12 +16,35 @@
 #
 # These tasks are the responsibility of the host application.
 
+# TODO
+#   * Verify that all types are correct (strings and ints) when data is passed in
+#   * Verify that dictionaries do not contain extra keys
+
 
 from typing import Optional, Dict
 from src.interfaces.backend_io import BackendIO
 from .sqlite_queries import *
 import sqlite3
 
+REQUIRED_ELECTION_KEYS = (
+    "election_title",
+    "description",
+    "start_date",
+    "end_date",
+    "creator_id",
+    "master_ballot_title"
+)
+
+REQUIRED_MASTER_BALLOT_KEYS = (
+    "master_ballot_title",
+    "questions"
+)
+
+REQUIRED_BALLOT_KEYS = (
+    "ballot_id",
+    "answers",
+    "master_ballot_title"
+)
 
 class SQLiteBackendIO(BackendIO):
     def __init__(self, db_path):
@@ -34,8 +57,15 @@ class SQLiteBackendIO(BackendIO):
         self.connection.commit()
 
     def create_election(self, master_ballot: Dict, election_details: Dict):
-        election_title = election_details["election_title"]
+        for key in REQUIRED_ELECTION_KEYS:
+            if key not in election_details:
+                raise ValueError("Missing Key: '{0}'".format(key))
 
+        for key in REQUIRED_MASTER_BALLOT_KEYS:
+            if key not in master_ballot:
+                raise ValueError("Missing Key: '{0}'".format(key))
+
+        election_title = election_details["election_title"]
         if self.get_election_by_title(election_title) is not None:
             raise ValueError("Election with title '{id}' already exists".format(id=election_title))
 
@@ -58,6 +88,10 @@ class SQLiteBackendIO(BackendIO):
         self.connection.commit()
 
     def create_ballot(self, ballot: Dict):
+        for key in REQUIRED_BALLOT_KEYS:
+            if key not in ballot:
+                raise ValueError("Missing Key: '{0}'".format(key))
+
         # If there is an election then there is a master ballot (Referential Integrity)
         if self.get_election_by_title(ballot["master_ballot_title"]) is None:
             raise ValueError("Can't add ballot, corresponding Election / MasterBallot not found.")
