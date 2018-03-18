@@ -57,6 +57,20 @@ class SQLiteBackendIO(BackendIO):
 
         self.connection.commit()
 
+    def create_ballot(self, ballot: Dict):
+        # If there is an election then there is a master ballot (Referential Integrity)
+        if self.get_election_by_title(ballot["master_ballot_title"]) is None:
+            raise ValueError("Can't add ballot, corresponding Election / MasterBallot not found.")
+
+        self.cursor.execute(
+            INSERT_BALLOT, (ballot["ballot_id"],
+                            ballot["answers"],
+                            ballot["master_ballot_title"]
+                           )
+        )
+
+        self.connection.commit()
+
     def get_election_by_title(self, election_title: str) -> Optional[Dict]:
         self.cursor.execute(SELECT_ELECTION_BY_TITLE, (election_title,))
         result = self.cursor.fetchone()
