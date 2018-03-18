@@ -14,6 +14,10 @@ class BackendIO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def create_ballot(self, ballot: Dict):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_election_by_title(self, election_title: str) -> Optional[Dict]:
         raise NotImplementedError
 
