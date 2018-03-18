@@ -83,5 +83,17 @@ class SQLiteBackendIO(BackendIO):
             "questions": result[1],
         }
 
+    def get_ballot_by_id(self, ballot_id: str):
+        self.cursor.execute(SELECT_BALLOT_BY_ID, (ballot_id,))
+        result = self.cursor.fetchone()
+        if result is None:
+            return result
+
+        return {
+            "ballot_id": result[0],
+            "answers": result[1],
+            "master_ballot_title": result[2]
+        }
+
     def close(self):
         self.connection.close()

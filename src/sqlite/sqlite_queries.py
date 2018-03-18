@@ -84,3 +84,8 @@ SELECT_MASTER_BALLOT_BY_TITLE = """
 SELECT * from MasterBallot WHERE
     master_ballot_title = (?)
 """
+
+SELECT_BALLOT_BY_ID = """
+SELECT * from Ballot WHERE
+    ballot_id = (?)
+"""
