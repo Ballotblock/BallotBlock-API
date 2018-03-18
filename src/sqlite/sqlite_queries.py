@@ -13,34 +13,32 @@
 
 CREATE_MASTER_BALLOT_TABLE = """
 CREATE TABLE IF NOT EXISTS MasterBallot
-(master_ballot_id TEXT NOT NULL UNIQUE,
- election_id      TEXT NOT NULL UNIQUE,
- questions        TEXT NOT NULL,
-                  FOREIGN KEY (election_id) REFERENCES Election(election_id)
-                  PRIMARY KEY(master_ballot_id))
+(master_ballot_title TEXT NOT NULL UNIQUE,
+ questions           TEXT NOT NULL,
+                     FOREIGN KEY (master_ballot_title) REFERENCES Election(election_title)
+                     PRIMARY KEY(master_ballot_title))
 """
 
 CREATE_ELECTION_TABLE = """
 CREATE TABLE IF NOT EXISTS Election
-(election_id       TEXT NOT NULL UNIQUE,
- creator_id        TEXT NOT NULL UNIQUE,
- title             TEXT NOT NULL UNIQUE,
- description       TEXT NOT NULL,
- start_date        INT NOT NULL,
- end_date          INT NOT NULL,
- master_ballot_id  TEXT NOT NULL UNIQUE,
-                   FOREIGN KEY (master_ballot_id) REFERENCES MasterBallot(master_ballot_id)
-                   PRIMARY KEY(election_id))
+(election_title      TEXT NOT NULL UNIQUE,
+ description         TEXT NOT NULL,
+ start_date          INT NOT NULL,
+ end_date            INT NOT NULL,
+ creator_id          TEXT NOT NULL UNIQUE,
+ master_ballot_title TEXT NOT NULL UNIQUE,
+                     FOREIGN KEY (master_ballot_title) REFERENCES MasterBallot(master_ballot_title)
+                     PRIMARY KEY(election_title))
 """
 
 # Answers is a JSON Dump for now.
 CREATE_BALLOT_TABLE = """
 CREATE TABLE IF NOT EXISTS Ballot
-(ballot_id         TEXT NOT NULL UNIQUE,
- answers           TEXT NOT NULL,
- master_ballot_id  TEXT NOT NULL UNIQUE,
-                   FOREIGN KEY (master_ballot_id) REFERENCES MasterBallot(master_ballot_id)
-                   PRIMARY KEY(ballot_id))
+(ballot_id           TEXT NOT NULL UNIQUE,
+ answers             TEXT NOT NULL,
+ master_ballot_title TEXT NOT NULL UNIQUE,
+                     FOREIGN KEY (master_ballot_title) REFERENCES MasterBallot(master_ballot_title)
+                     PRIMARY KEY(ballot_id))
 """
 
 #
@@ -49,28 +47,40 @@ CREATE TABLE IF NOT EXISTS Ballot
 
 INSERT_MASTER_BALLOT = """
 INSERT INTO MasterBallot (
-    master_ballot_id,
-    election_id,
+    master_ballot_title,
     questions)
-VALUES(?, ?, ?)
+VALUES(?, ?)
 """
 
 INSERT_ELECTION = """
 INSERT INTO Election (
-     election_id,
-     creator_id,
-     title,
+     election_title,
      description,
      start_date,
      end_date,
-     master_ballot_id)
-VALUES(?, ?, ?, ?, ?, ?, ?)
+     creator_id,
+     master_ballot_title)
+VALUES(?, ?, ?, ?, ?, ?)
 """
 
 INSERT_BALLOT = """
 INSERT INTO Ballot (
      ballot_id,
      answers,
-     master_ballot_id)
+     master_ballot_title)
 VALUES(?, ?, ?)
+"""
+
+#
+# Searching
+#
+
+SELECT_ELECTION_BY_TITLE = """
+SELECT * from Election WHERE
+    election_title = (?)
+"""
+
+SELECT_MASTER_BALLOT_BY_TITLE = """
+SELECT * from MasterBallot WHERE
+    master_ballot_title = (?)
 """
