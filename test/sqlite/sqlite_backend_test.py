@@ -99,7 +99,7 @@ class SQLite3BackendTest(unittest.TestCase):
 
     def test_c_election_with_dupe_election_title_not_added(self):
         # Attempt to add the same election / master ballot again fails
-        self.failUnlessRaises(ValueError, self.backend_io.create_election, self.master_ballot, self.election)
+        self.assertRaises(ValueError, self.backend_io.create_election, self.master_ballot, self.election)
 
     def test_d_election_missing_keys_not_added(self):
         election_title = "Another election"
@@ -122,14 +122,13 @@ class SQLite3BackendTest(unittest.TestCase):
 
         tmp_election = deepcopy(election_2)
         tmp_master_ballot = deepcopy(master_ballot_2)
-        election_keys = list(election_2.keys())
 
         # Verify that if we remove any of the required keys from the
         # election dictionary that `create_election` refuses to insert
         # into the database.
         for key, value in election_2.items():
             tmp_election.pop(key, None)
-            self.failUnlessRaises(ValueError, self.backend_io.create_election, tmp_election, tmp_master_ballot)
+            self.assertRaises(ValueError, self.backend_io.create_election, tmp_master_ballot, tmp_election)
             tmp_election[key] = value
 
         # Verify that if we remove any of the required keys from the
@@ -137,7 +136,7 @@ class SQLite3BackendTest(unittest.TestCase):
         # into the database.
         for key, value in master_ballot_2.items():
             tmp_master_ballot.pop(key, None)
-            self.failUnlessRaises(ValueError, self.backend_io.create_election, tmp_election, tmp_master_ballot)
+            self.assertRaises(ValueError, self.backend_io.create_election, tmp_master_ballot, tmp_election)
             tmp_master_ballot[key] = value
 
     def test_e_ballot_missing_keys_not_added(self):
@@ -152,5 +151,5 @@ class SQLite3BackendTest(unittest.TestCase):
         tmp_ballot = deepcopy(ballot_2)
         for key, value in ballot_2.items():
             tmp_ballot.pop(key, None)
-            self.failUnlessRaises(ValueError, self.backend_io.create_ballot, tmp_ballot)
+            self.assertRaises(ValueError, self.backend_io.create_ballot, tmp_ballot)
             tmp_ballot[key] = value
