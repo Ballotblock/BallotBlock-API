@@ -10,6 +10,7 @@ import time
 import unittest
 import uuid
 import json
+from copy import deepcopy
 
 
 class SQLite3BackendTest(unittest.TestCase):
@@ -29,27 +30,31 @@ class SQLite3BackendTest(unittest.TestCase):
             ["Yes", "Red"]
         ]
 
-        election_title = "Example Election"
+        self.election_title = "Example Election"
 
         self.election = {
-            "election_title": election_title,
+            "election_title": self.election_title,
             "description": "This is an example election",
             "start_date": now,
             "end_date": ten_days_later,
             "creator_id": str(uuid.uuid4()),
-            "master_ballot_title": election_title
+            "master_ballot_title": self.election_title
         }
 
         self.master_ballot = {
-            "master_ballot_title": election_title,
+            "master_ballot_title": self.election_title,
             "questions": json.dumps(self.questions),
         }
 
         self.ballot = {
             "ballot_id": str(uuid.uuid4()),
             "answers": json.dumps(self.answers),
-            "master_ballot_title": election_title
+            "master_ballot_title": self.election_title
         }
+
+    @classmethod
+    def tearDownClass(self):
+        self.backend_io.close()
 
     def test_a_add_single_election(self):
         # Add our election to the table
@@ -96,3 +101,56 @@ class SQLite3BackendTest(unittest.TestCase):
         # Attempt to add the same election / master ballot again fails
         self.failUnlessRaises(ValueError, self.backend_io.create_election, self.master_ballot, self.election)
 
+    def test_d_election_missing_keys_not_added(self):
+        election_title = "Another election"
+        now = int(time.time())
+        five_days_later = int((datetime.datetime.fromtimestamp(now) + datetime.timedelta(days=5)).timestamp())
+
+        election_2 = {
+            "election_title": election_title,
+            "description": "This is an example election",
+            "start_date": now,
+            "end_date": five_days_later,
+            "creator_id": str(uuid.uuid4()),
+            "master_ballot_title": election_title
+        }
+
+        master_ballot_2 = {
+            "master_ballot_title": election_title,
+            "questions": json.dumps(self.questions),
+        }
+
+        tmp_election = deepcopy(election_2)
+        tmp_master_ballot = deepcopy(master_ballot_2)
+        election_keys = list(election_2.keys())
+
+        # Verify that if we remove any of the required keys from the
+        # election dictionary that `create_election` refuses to insert
+        # into the database.
+        for key, value in election_2.items():
+            tmp_election.pop(key, None)
+            self.failUnlessRaises(ValueError, self.backend_io.create_election, tmp_election, tmp_master_ballot)
+            tmp_election[key] = value
+
+        # Verify that if we remove any of the required keys from the
+        # master_ballot dictionary that `create_election` refuses to insert
+        # into the database.
+        for key, value in master_ballot_2.items():
+            tmp_master_ballot.pop(key, None)
+            self.failUnlessRaises(ValueError, self.backend_io.create_election, tmp_election, tmp_master_ballot)
+            tmp_master_ballot[key] = value
+
+    def test_e_ballot_missing_keys_not_added(self):
+
+        # Create another ballot for the original election
+        ballot_2 = {
+            "ballot_id": str(uuid.uuid4()),
+            "answers": json.dumps(self.answers),
+            "master_ballot_title": self.election_title
+        }
+
+        tmp_ballot = deepcopy(ballot_2)
+        for key, value in ballot_2.items():
+            tmp_ballot.pop(key, None)
+            self.failUnlessRaises(ValueError, self.backend_io.create_ballot, tmp_ballot)
+            tmp_ballot[key] = value
