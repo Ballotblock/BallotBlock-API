@@ -27,4 +27,4 @@ class BackendIO(abc.ABC):
 
     @abc.abstractmethod
     def get_ballot_by_id(self, ballot_id: str) -> Optional[Dict]:
-        pass
+        raise NotImplementedError
