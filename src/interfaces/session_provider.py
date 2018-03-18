@@ -11,16 +11,16 @@ class SessionProvider(abc.ABC):
 
     @abc.abstractmethod
     def authenticate_user(self, username: str)-> str:
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def unauthenticate_user(self, username: str)-> None:
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def is_authenticated(self, username: str) -> bool:
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def get_id(self) -> str:
-        pass
+        raise NotImplementedError
