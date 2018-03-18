@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# integration/test_create_election.py
+# integration/sqlite3/sqlite_test_create_election.py
 # Authors:
 #   Samuel Vargas
 #
@@ -12,8 +12,9 @@ import uuid
 import unittest
 import time
 import datetime
-
 import src.intermediary
+
+JSON_HEADERS = {"Content-Type": "application/json"}
 
 
 class CreateElectionTest(unittest.TestCase):
@@ -21,7 +22,7 @@ class CreateElectionTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.app = src.intermediary.start_test_sqlite(":memory:")
-        self.headers = {"Content-Type": "application/json"}
+
         self.election_creator = {
             "username": "Sam",
             "password": "123456",
@@ -31,7 +32,7 @@ class CreateElectionTest(unittest.TestCase):
         now = int(time.time())
         ten_days_later = int((datetime.datetime.fromtimestamp(now) + datetime.timedelta(days=10)).timestamp())
 
-        self.election = {
+        self.election_data = {
             "username": "Sam",
             "start_date": now,
             "end_date": ten_days_later,
@@ -52,12 +53,16 @@ class CreateElectionTest(unittest.TestCase):
         self.sessionID = uuid.uuid4()
 
     def test_user_can_create_election(self):
-        # Mockout the registration provider's is_user_registered()
+        # Assume the user is registered.
         src.intermediary.REGISTRATION_PROVIDER.is_user_registered = MagicMock(return_value=True)
+
+        # Assume the user election data is always valid for now.
+        src.intermediary.ELECTION_JSON_VALIDATOR.is_valid = MagicMock(
+            return_value=(True, "Testing, data is assumed to be valid."))
 
         # Log the election creator in
         response = self.app.post("/api/login",
-                                 headers=self.headers,
+                                 headers=JSON_HEADERS,
                                  data=json.dumps(self.election_creator))
 
         expectedCode = httpcode.LOGIN_SUCCESSFUL.code
@@ -69,7 +74,7 @@ class CreateElectionTest(unittest.TestCase):
 
         # Verify we're now authenticated with the intermediary server
         response = self.app.post("/api/login",
-                                 headers=self.headers,
+                                 headers=JSON_HEADERS,
                                  data=json.dumps(self.election_creator))
         expectedCode = httpcode.USER_ALREADY_AUTHENTICATED.code
         expectedMessage = httpcode.USER_ALREADY_AUTHENTICATED.message
@@ -79,6 +84,13 @@ class CreateElectionTest(unittest.TestCase):
             "Intermediary server should see our previous login."
 
         # Send a request to create an election
+        response = self.app.post("/api/election/create",
+                                 headers=JSON_HEADERS,
+                                 data=json.dumps(self.election_data))
+
+        # TODO:
+        # * Implement election_create()
+        # * Implement election
 
         # 4) Verify that when we query the server with our username
         # 5) We recieve
