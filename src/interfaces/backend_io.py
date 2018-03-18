@@ -20,3 +20,7 @@ class BackendIO(abc.ABC):
     @abc.abstractmethod
     def get_master_ballot_by_title(self, election_title: str) -> Optional[Dict]:
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_ballot_by_id(self, ballot_id: str) -> Optional[Dict]:
+        pass
