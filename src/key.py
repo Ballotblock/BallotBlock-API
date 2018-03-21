@@ -6,36 +6,21 @@
 #
 
 from typing import NamedTuple
-from collections import namedtuple
 import ecdsa
 from ecdsa import SigningKey, VerifyingKey
 
 ECDSA_CURVE = ecdsa.SECP256k1
-
-HexKeyPair = NamedTuple("hexkeypair", [("public", str), ("private", str)])
-_hexkeypair = namedtuple("hexkeypair", ("public", "private"))
+ECDSA_256k1_KeyPair = NamedTuple("hexkeypair", [("public", VerifyingKey), ("private", SigningKey)])
 
 
-def generate_edsca_hexkeypair() -> HexKeyPair:
-    """
-    Generates an EDSCA public private key pair.
-    The values are returned as strings for easy
-    serialization.
-
-    :return: A HexKeyPair tuple
-    """
+def generate_edsca_keypair() -> ECDSA_256k1_KeyPair:
     private = SigningKey.generate(curve=ECDSA_CURVE)
     public = private.get_verifying_key()
-    private_string = (private.to_string()).hex()
-    public_string = (public.to_string()).hex()
-    return _hexkeypair(public_string, private_string)
+    return ECDSA_256k1_KeyPair(public, private)
 
 
-def public_hex_to_verifying_key(hex: str) -> VerifyingKey:
-    return VerifyingKey.from_string(bytes.fromhex(hex), curve=ECDSA_CURVE)
-
-
-def private_hex_to_signing_key(hex: str) -> SigningKey:
-    return SigningKey.from_string(bytes.fromhex(hex), curve=ECDSA_CURVE)
-
-
+def hex_to_ecdsa_keypair(public: str, private: str) -> ECDSA_256k1_KeyPair:
+    return ECDSA_256k1_KeyPair(
+        VerifyingKey.from_string(bytes.fromhex(public), curve=ECDSA_CURVE),
+        SigningKey.from_string(bytes.fromhex(private), curve=ECDSA_CURVE)
+    )
