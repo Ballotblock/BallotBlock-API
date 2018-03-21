@@ -31,7 +31,7 @@ from src import app
 from src.backend_type import BackendType
 from src import httpcode
 from src.validator import ElectionJsonValidator
-from src.voter import Voter
+from src.users import Voter
 from src.sessions import MemorySessionProvider
 from src.registration import RegistrationServerProvider
 from src.sqlite import SQLiteBackendIO

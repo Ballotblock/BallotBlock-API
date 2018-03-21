@@ -1,0 +1,2 @@
+
+from .voter import Voter
