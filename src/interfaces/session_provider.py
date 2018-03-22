@@ -4,23 +4,19 @@
 # Authors:
 #     Samuel Vargas
 
+from flask import Session
 import abc
 
 
 class SessionProvider(abc.ABC):
-
     @abc.abstractmethod
-    def authenticate_user(self, username: str)-> str:
+    def authenticate_user(self, username: str, account_type: str, session: Session) -> None:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def unauthenticate_user(self, username: str)-> None:
+    def unauthenticate_user(self, username: str, account_type: str, session: Session) -> None:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def is_authenticated(self, username: str) -> bool:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_id(self) -> str:
+    def is_authenticated(self, username: str, account_type: str, session: Session) -> bool:
         raise NotImplementedError
