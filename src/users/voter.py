@@ -1,5 +1,5 @@
 #
-# src/voter.py
+# src/users/voter.py
 # Authors:
 #     Alex Gao
 #
