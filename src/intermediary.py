@@ -194,20 +194,6 @@ def election_get_ballot_schema():
     """
     raise NotImplementedError()
 
-
-@app.route("/api/vote", methods=["POST"])
-def election_vote():
-    """
-    Allows the user to cast a vote (sending the contents
-    of their filled out ballot.
-    If their ballot is missing or contains invalid data return
-    an error. Otherwise accept their ballot and store it
-    on the backend.
-    Users may only cast their vote ONCE. Election creators
-    may not cast votes. Only create elections.
-    """
-    raise NotImplementedError()
-
 @app.route("/api/vote", methods=["POST"])
 def election_vote():
     """
