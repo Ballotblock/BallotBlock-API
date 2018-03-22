@@ -18,40 +18,72 @@ class Voter():
     def __init__(self,voterId):
         self.voter = voterId
 
-    def get_elections(self,electionId):
+    def get_election(self,electionId):
         """
         Returns all the details of an election given the electionID to identify the election
         Preforms a request to the hyperledger rest server to retrieve the json dump
         """
-        electionId = quote(electionId)
+        
         url = hyperledger + "elections/" + electionId
         result = requests.get(url)
         return result.json(), result.status_code
 
-    def get_ballots(self):
+    def get_current_elections(self):
+        """
+        Returns only the electionId(s) of current elections
+        """
+
+        url = hyperledger + "elections?filter="  + Filter.current_filter();
+        result = requests.get(url)
+        return result.json(), result.status_code
+
+    def get_past_elections(self):
+        """
+        Returns only the electionId(s) of current elections
+        """
+
+        url = hyperledger + "elections?filter="  + Filter.past_filter();
+        result = requests.get(url)
+        return result.json(), result.status_code
+
+
+    def get_upcomming_elections(self):
+        """
+        Returns only the electionId(s) of current elections
+        """
+
+        url = hyperledger + "elections?filter="  + Filter.upcomming_filter();
+        result = requests.get(url)
+        return result.json(), result.status_code
+    
+
+
+    def get_ballot(self,electionId):
 
         """
-        Returns a list of all the ballots that a user holds
-        example return json dump below:
-        [
-          {
-            "$class": "org.hyperledger_composer.ballots.ballots",
-            "ballotId": "Alice_ASASU2017 Election",
-            "voter": "resource:org.hyperledger_composer.ballots.voters#Alice",
-            "election": "resource:org.hyperledger_composer.ballots.elections#ASASU2017%20Election",
-            "marked": false,
-            "startDate": "2018-01-29T17:59:12.884Z",
-            "endDate": "2018-03-29T17:59:12.884Z",
-            "selections": [
-              0
-            ]
-          }
-        ]
+        Returns a specific ballot for that voter
         """
-        resource = "resource:org.hyperledger_composer.ballots.voters#" + self.voter
-        resource = quote(resource)
-        url = hyperledger + "queries/getVoterBallots?voter=" + resource
+        ballotId = self.voter +"_" + electionId
+        url = hyperledger + "ballots/" + ballotId;
         result = requests.get(url)
+        return result.json(),result.status_code
+
+
+    def vote(self,electionId,answer):
+        """
+        Lets a user vote in an election
+        """
+        url = hyperledger + "vote";
+        voter = "org.hyperledger_composer.ballots.voters#" + self.voter;
+        election = "org.hyperledger_composer.ballots.elections#" + electionId;
+        data = {
+            "$class": "org.hyperledger_composer.ballots.vote",
+            "voter": voter,
+            "election":election,
+            "answers": answer
+            }
+
+        result = requests.post(url,data)
         return result.json(),result.status_code
 
 

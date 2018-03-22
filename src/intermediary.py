@@ -155,10 +155,7 @@ def election_list():
     the login route above is implemented. Instead we would
     extract the id from the token created by logging in first
     """
-    id = request.args.get('id')
-    user = voter(id)
-    json = user.get_ballots()
-    return jsonify(json), 200
+    raise NotImplementedError()
 
 
 @app.route("/api/election/<id>", methods=["GET"])
@@ -176,13 +173,10 @@ def election_get(id):
     extract the id from the token created by logging in first
     The token would be passed in the request in perhaps bearer or cookie
     """
-    electionId = id;
-    userId = request.args.get('id')
-    user = voter(userId)
-    json = user.get_elections(electionId)
-    return jsonify(json), 200
+    raise NotImplementedError()
 
 
+# Note : we might not need this at all
 @app.route("/api/ballot", methods=["POST"])
 def election_join():
     """
@@ -213,3 +207,27 @@ def election_vote():
     may not cast votes. Only create elections.
     """
     raise NotImplementedError()
+
+@app.route("/api/vote", methods=["POST"])
+def election_vote():
+    """
+    Allows the user to cast a vote (sending the contents
+    of their filled out ballot.
+    If their ballot is missing or contains invalid data return
+    an error. Otherwise accept their ballot and store it
+    on the backend.
+    Users may only cast their vote ONCE. Election creators
+    may not cast votes. Only create elections.
+
+    accepts a post request in the following format
+    {
+        "election" : "some election"
+        "answers" : [1,2,3,4]
+    }
+    """
+    content = request.get_json(silent=True, force=True)
+    userId = request.args.get('id')
+    user = Voter(userId)
+    json = user.vote(content['election'],content['answers'])
+    
+    return jsonify(json)
