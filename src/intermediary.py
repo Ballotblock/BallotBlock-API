@@ -137,26 +137,26 @@ def election_create() -> httpcode.HttpCode:
     return httpcode.ELECTION_CREATED_SUCCESSFULLY
 
 
-@app.route("/api/election/", methods=["GET"])
-def election_list():
+@app.route("/api/election/current", methods=["GET"])
+def current_election_list():
     """
     
-    "list" part in the route removed, GET request means
-    you are going to get a list of all the elections associated with the user.
-    
-    Returns a list of elections that any user can
-    participate in.
-    A user can participate in an election if that user
-    holds a ballot for that election.
-    Here this method will return a list of ballots that a user currently holds
-    Example of an api call
-    http://127.0.0.1:5000/api/election/list?id=someId
-    Note that this initial implementation is likely change as
-    the login route above is implemented. Instead we would
-    extract the id from the token created by logging in first
     """
     raise NotImplementedError()
 
+@app.route("/api/election/past", methods=["GET"])
+def past_election_list():
+    """
+    
+    """
+    raise NotImplementedError()
+
+@app.route("/api/election/upcomming", methods=["GET"])
+def upcomming_election_list():
+    """
+    
+    """
+    raise NotImplementedError()
 
 @app.route("/api/election/<id>", methods=["GET"])
 def election_get(id):
@@ -193,6 +193,8 @@ def election_get_ballot_schema():
     Returns a 'ballot' json object containing several propositions
     """
     raise NotImplementedError()
+
+
 
 @app.route("/api/vote", methods=["POST"])
 def election_vote():
