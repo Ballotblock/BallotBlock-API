@@ -29,7 +29,7 @@ USER_NOT_REGISTERED = \
     HttpCode("Register with the Registration server prior to signing-in", status.HTTP_400_BAD_REQUEST)
 
 USER_ALREADY_AUTHENTICATED = \
-    HttpCode("You have aleady logged in. Log out first before logging back in.", status.HTTP_400_BAD_REQUEST)
+    HttpCode("You have already logged in. Log out first before logging back in.", status.HTTP_400_BAD_REQUEST)
 
 LOG_IN_FIRST = \
     HttpCode("You are not logged in. Login with /api/login/ first", status.HTTP_403_FORBIDDEN)
@@ -64,6 +64,9 @@ ELECTION_CREATED_SUCCESSFULLY = \
 
 ELECTION_SEARCH_BY_TITLE_MISSING_ELECTION_TITLE = \
     HttpCode("You forgot to specify the 'election_title' key", status.HTTP_400_BAD_REQUEST)
+
+ELECTION_NOT_FOUND = \
+    HttpCode("Couldn't find an election with this name.", status.HTTP_404_NOT_FOUND)
 
 VOTER_CANNOT_CREATE_ELECTION = \
     HttpCode("Voters are not allowed to create an election.", status.HTTP_400_BAD_REQUEST)
