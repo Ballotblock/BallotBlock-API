@@ -106,3 +106,4 @@ ENV/
 # Testing
 .pytest_cache/*
 lastfailed
+nodeids
