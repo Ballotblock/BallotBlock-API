@@ -183,7 +183,12 @@ def election_get(id):
     extract the id from the token created by logging in first
     The token would be passed in the request in perhaps bearer or cookie
     """
-    raise NotImplementedError()
+    
+    electionId = id;
+    userId = request.args.get('id')
+    user = Voter(userId)
+    json = user.get_election(electionId)
+    return jsonify(json), 200
 
 
 # Note : we might not need this at all
@@ -197,12 +202,16 @@ def election_join():
     raise NotImplementedError()
 
 
-@app.route("/api/ballot", methods=["GET"])
-def election_get_ballot_schema():
+@app.route("/api/ballot/<id>", methods=["GET"])
+def election_get_ballot_schema(id):
     """
     Returns a 'ballot' json object containing several propositions
     """
-    raise NotImplementedError()
+    electionId = id;
+    userId = request.args.get('id')
+    user = Voter(userId)
+    json = user.get_ballot(electionId)
+    return jsonify(json), 200
 
 
 
