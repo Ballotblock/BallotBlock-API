@@ -7,6 +7,7 @@
 import requests
 from urllib.parse import quote
 from flask import json
+from .filter import Filter
 
 # Below is the url of the deployed hyperleder composer rest server
 # for testing purposes, perhaps change url to locally deployed server
@@ -85,5 +86,6 @@ class Voter():
 
         result = requests.post(url,data)
         return result.json(),result.status_code
+
 
 

@@ -140,23 +140,33 @@ def election_create() -> httpcode.HttpCode:
 @app.route("/api/election/current", methods=["GET"])
 def current_election_list():
     """
-    
+    Returns a list of all the current elections
     """
-    raise NotImplementedError()
+    id = request.args.get('id')
+    user = Voter(id);
+    json = user.get_current_elections();
+    return jsonify(json);
 
 @app.route("/api/election/past", methods=["GET"])
 def past_election_list():
     """
-    
+    Returns a list of all the current elections
     """
-    raise NotImplementedError()
+
+    id = request.args.get('id')
+    user = Voter(id);
+    json = user.get_past_elections();
+    return jsonify(json);
 
 @app.route("/api/election/upcomming", methods=["GET"])
 def upcomming_election_list():
     """
-    
+    Returns a list of all the current elections
     """
-    raise NotImplementedError()
+    id = request.args.get('id')
+    user = Voter(id);
+    json = user.get_upcomming_elections();
+    return jsonify(json);
 
 @app.route("/api/election/<id>", methods=["GET"])
 def election_get(id):
