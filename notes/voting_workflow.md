@@ -25,20 +25,21 @@ request with the following format:
 
 ```
 {
-    "master_ballot": "{
-        'election_title': 'Favorite Color and Shape Election',
-        'description': 'Pick your favorite color / shape.'
-        'start_date': 1521507388,
-        'end_date': 1522371388,
-        'questions': [
-            ['Favorite Color?', ['Red', 'Blue']],
-            ['Favorite Shape?', ['Square', 'Triangle']]
-        ]'
-    }",
 
-    "creator_public_key": "5a049409e2167292346f637613104d0fdb3a44ce3c41f4532b0cd6288a0a64043e552ce8e7c53fd8ebff0461a993155dab52bb60158656d8516315c03844f4a3",
-
-    "master_ballot_signature": "77d1e68a94d70d705c2619ec2b5fddf007a5194fcd5f0404a3013d501b1c92221f0a18dfd7121b8fc508f1fe2600f0869090555a3d0f536c014dfe4f937e6561",
+    "master_ballot":
+    "{
+        "description": "Pick your favorite color / shape.",
+        "election_title": "Favorite Color and Shape Election",
+        "start_date": 1521507388,
+        "end_date": 1522371388,
+        "question":
+         [
+            ["Favorite Color?", ["Red", "Blue"]],
+            ["Favorite Shape?", ["Square", "Triangle"]]
+         ]
+    },
+    "creator_public_key": "24a58f407e478b9bf78b216ac822a97469dca6f1e79ac28adabcb3e2e42477830174e1db2ab5b8ce0988807fa6c886ad7ffbdbfa5e5e6f47fbf4119b3017358e",
+    "master_ballot_signature": "5df34b734e8fa793b6c46f51e331ffaa9dad3c0046db0c4270efc1ca62ec44c01300b9e1766aed5f7dac23e29a1a02e102b896820d9d9b9c297ae9366e49a0f3"
 }
 ```
 
