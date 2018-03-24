@@ -26,8 +26,7 @@ for subdirectory in SUBDIRECTORIES:
 #     Samuel Vargas
 #     Alex Gao
 
-from flask import request, jsonify, session
-from src import app
+from flask import Flask, request, jsonify, session
 from src import httpcode
 from src.validator import ElectionJsonValidator
 from src.sessions import SessionManager
@@ -38,6 +37,8 @@ from src.crypto_suite import CryptoSuite
 import json
 import uuid
 import time
+
+app = Flask(__name__)
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
