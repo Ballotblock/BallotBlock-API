@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# src/test_key.py
+# test/test_crypto_suite.py
 # Authors:
 #   Samuel Vargas
 #
