@@ -68,17 +68,6 @@ class SQLiteBackendIO(BackendIO):
 
     def create_ballot(self, ballot: Dict):
         raise NotImplementedError
-"""
-        for key in REQUIRED_BALLOT_KEYS:
-            if key not in ballot:
-                raise ValueError("Missing Key: '{0}'".format(key))
-
-        if self.get_election_by_title(ballot["election_title"]) is None:
-            raise ValueError("Election {0} does not exist. Refusing to add ballot".format(ballot["election_title"]))
-
-        self.cursor.execute(INSERT_BALLOT, (ballot["voter_id"], ballot["answers"], ballot["election_title"]))
-        self.connection.commit()
-"""
 
     def get_election_by_title(self, election_title: str) -> Optional[Dict]:
         self.cursor.execute(SELECT_ELECTION_BY_TITLE, (election_title,))
@@ -103,18 +92,6 @@ class SQLiteBackendIO(BackendIO):
 
     def get_ballot_by_id(self, ballot_id: str):
         raise NotImplementedError
-"""
-        self.cursor.execute(SELECT_BALLOT_BY_ID, (ballot_id,))
-        result = self.cursor.fetchone()
-        if result is None:
-            return result
-
-        return {
-            "voter_id": result[0],
-            "answers": result[1],
-            "election_title": result[2]
-        }
-"""
 
     def has_user_participated_in_election(self, username: str, election_title: str) -> bool:
         raise NotImplementedError
