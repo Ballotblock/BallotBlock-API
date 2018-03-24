@@ -34,7 +34,7 @@ from src.sessions import SessionManager
 from src.registration import RegistrationServerProvider
 from src.interfaces import BackendIO
 from src import required_keys
-from src.key import is_data_signed_with_public_key, generate_edsca_keypair
+from src.crypto_suite import CryptoSuite
 import json
 import uuid
 import time
@@ -157,12 +157,13 @@ def election_create() -> httpcode.HttpCode:
         return httpcode.ELECTION_WITH_TITLE_ALREADY_EXISTS
 
     # Verify that we can decrypt the "signature" using "ballot" + "public_key"
-    if not is_data_signed_with_public_key(content['creator_public_key'], content['master_ballot_signature'],
-                                          content['master_ballot']):
+    if not CryptoSuite.is_data_signed(content['creator_public_key'],
+                                      content['master_ballot_signature'],
+                                      content['master_ballot']):
         return httpcode.ELECTION_BALLOT_SIGNING_MISMATCH
 
     # Generate a public private key pair, used to encrypt voter ballots.
-    election_keypair = generate_edsca_keypair()
+    election_keypair = CryptoSuite.generate_key_pair()
     public_hex_key = str(election_keypair.public.to_string().hex())
     private_hex_key = str(election_keypair.private.to_string().hex())
 

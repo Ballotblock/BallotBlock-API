@@ -7,8 +7,7 @@
 
 import unittest
 from ecdsa import SigningKey, VerifyingKey, BadSignatureError
-from src.key import ECDSA_256k1_KeyPair, generate_edsca_keypair
-import src.key as key
+from src.crypto_suite import CryptoSuite, ECDSA_256k1_KeyPair
 
 
 class Person:
@@ -29,8 +28,8 @@ class Person:
 class KeyTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.alice = Person(b"All your base are belong to us", key.generate_edsca_keypair())
-        self.bob = Person(b"Somebody set us up the bomb", key.generate_edsca_keypair())
+        self.alice = Person(b"All your base are belong to us", CryptoSuite.generate_key_pair())
+        self.bob = Person(b"Somebody set us up the bomb", CryptoSuite.generate_key_pair())
 
     def test_alice_verify_message(self):
         message = self.alice.get_message()

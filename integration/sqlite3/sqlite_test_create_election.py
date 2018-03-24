@@ -12,11 +12,10 @@ import src.intermediary
 import time
 import datetime
 from src.httpcode import ELECTION_CREATED_SUCCESSFULLY
-from src.key import generate_edsca_keypair
 from src.validator import ElectionJsonValidator
 from src.registration import RegistrationServerProvider
 from src.sqlite import SQLiteBackendIO
-from src.key import is_data_signed_with_public_key
+from src.crypto_suite import CryptoSuite
 
 JSON_HEADERS = {"Content-Type": "application/json"}
 PRESERVE_CONTEXT_ON_EXCEPTION = False
@@ -40,7 +39,7 @@ class CreateElectionTest(unittest.TestCase):
             registration_provider=registration_provider
         )
 
-        keys = generate_edsca_keypair()
+        keys = CryptoSuite.generate_key_pair()
 
         start_date = int(time.time())
         end_date = int((datetime.datetime.fromtimestamp(start_date) + datetime.timedelta(days=1)).timestamp())
@@ -107,6 +106,6 @@ class CreateElectionTest(unittest.TestCase):
             assert retrieved_election["master_ballot_signature"] == self.election_post["master_ballot_signature"]
 
             # Verify that the server did not tamper with our data by validating our signature
-            assert is_data_signed_with_public_key(retrieved_election["creator_public_key"],
-                                                  retrieved_election["master_ballot_signature"],
-                                                  self.master_ballot_json_str)
+            assert CryptoSuite.is_data_signed(retrieved_election["creator_public_key"],
+                                              retrieved_election["master_ballot_signature"],
+                                              self.master_ballot_json_str)
