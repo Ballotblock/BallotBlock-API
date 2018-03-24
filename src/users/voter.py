@@ -22,12 +22,29 @@ class Voter():
     def get_election(self,electionId):
         """
         Returns all the details of an election given the electionID to identify the election
+        Also preforms a request to see if the user holds a ballot for that specific election
+        If there is a ballot, return the selections
         Preforms a request to the hyperledger rest server to retrieve the json dump
         """
         
         url = hyperledger + "elections/" + electionId
         result = requests.get(url)
-        return result.json(), result.status_code
+
+        ballotId = self.voter +"_" + electionId;
+        url2 = hyperledger + "ballots/" + ballotId + "?filter=" + Filter.ballot_filter();
+        result2 = requests.get(url2);
+
+        if(result2.status_code == 200):
+            response = {
+                "election":result.json(),
+                "ballot":result2.json()
+                }
+        else:
+            response = {
+                "election":result.json(),
+                "ballot": False
+                }
+        return response, result.status_code
 
     def get_current_elections(self):
         """
@@ -86,6 +103,7 @@ class Voter():
 
         result = requests.post(url,data)
         return result.json(),result.status_code
+
 
 
 

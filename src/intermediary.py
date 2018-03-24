@@ -145,7 +145,9 @@ def current_election_list():
     id = request.args.get('id')
     user = Voter(id);
     json = user.get_current_elections();
-    return jsonify(json);
+    response = jsonify(json);
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response;
 
 @app.route("/api/election/past", methods=["GET"])
 def past_election_list():
@@ -188,7 +190,9 @@ def election_get(id):
     userId = request.args.get('id')
     user = Voter(userId)
     json = user.get_election(electionId)
-    return jsonify(json), 200
+    response = jsonify(json);
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response;
 
 
 # Note : we might not need this at all

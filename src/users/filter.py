@@ -12,7 +12,7 @@ import json
 # this follows LoopBack syntax
 class Filter() :
 
-    def current_filter(self):
+    def current_filter():
         """
         Generates a filter query parameter to retrieve all current elections
         These filters are submitted are submitted through the Hyperledger Composer Rest API
@@ -37,7 +37,7 @@ class Filter() :
             }
         return json.dumps(filter);
 
-    def past_filter(self):
+    def past_filter():
         """
         Generates a filter query parameter to retrieve all past elections
         These filters are submitted are submitted through the Hyperledger Composer Rest API
@@ -55,7 +55,7 @@ class Filter() :
             }
         return json.dumps(filter);
 
-    def upcomming_filter(self):
+    def upcomming_filter():
         """
         Generates a filter query parameter to retrieve all upcomming elections
         These filters are submitted are submitted through the Hyperledger Composer Rest API
@@ -66,12 +66,19 @@ class Filter() :
         filter = {
             "fields":{"electionId":True},
             "where": {
-                "endDate":{
+                "startDate":{
                     "gt":current_date
                     }
                 }
             }
-        return filter;
+        return json.dumps(filter);
+    
+    def ballot_filter():
+        """
+        Returns only the selections
+        """
+        filter = { "fields" : {"selections" : True}};
+        return json.dumps(filter);
 
 
 
