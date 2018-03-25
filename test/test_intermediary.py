@@ -63,13 +63,13 @@ def fake_authentication_and_run_callback(app, username: str, account_type: str, 
         callback()
 
 
-def get_test_client_without_registration_or_validation_and_empty_db(db_path=":memory:"):
+def get_test_client_without_registration_or_validation_and_empty_db():
     registration_provider = RegistrationServerProvider()
     election_json_validator = ElectionJsonValidator()
     election_json_validator.is_valid = MagicMock(return_value=(True, ""))
     registration_provider.is_user_registered = MagicMock(return_value=True)
     return src.intermediary.start_test_sqlite(
-        backend_io=SQLiteBackendIO(db_path),
+        backend_io=SQLiteBackendIO(":memory:"),
         election_json_validator=election_json_validator,
         registration_provider=registration_provider
     )
@@ -106,6 +106,10 @@ class IntermediaryTest(unittest.TestCase):
 
         fake_authentication_and_run_callback(app, username, account_type, test)
 
+    #
+    # Election Retrieval / Search
+    #
+
     def test_election_creator_data_is_stored_correctly(self):
         app = get_test_client_without_registration_or_validation_and_empty_db()
         username = "Samulus"
@@ -113,26 +117,8 @@ class IntermediaryTest(unittest.TestCase):
 
         def test():
             election = generate_election(questions=[["A or B", ["A, B"]]], creator_keys=ECDSAKeyPair())
-            master_ballot = json.loads(election['master_ballot'])
             response = app.post("/api/election/create", headers=JSON_HEADERS, data=json.dumps(election))
             assert response.data.decode('utf-8') == ELECTION_CREATED_SUCCESSFULLY.message
             assert response.status_code == ELECTION_CREATED_SUCCESSFULLY.code
 
-            # Verify that the election data was stored correctly
-            search = {'election_title': master_ballot['election_title']}
-            response = app.get("/api/election/get_by_title", headers=JSON_HEADERS, data=json.dumps(search))
-            assert response.status_code == 200
-            retrieved_election = json.loads(response.data)
-
-            assert retrieved_election["election_title"] == master_ballot["election_title"]
-            assert retrieved_election["description"] == master_ballot["description"]
-            assert retrieved_election["start_date"] == master_ballot["start_date"]
-            assert retrieved_election["end_date"] == master_ballot["end_date"]
-            assert json.loads(retrieved_election["questions"]) == master_ballot["questions"]
-            assert retrieved_election["creator_username"] == username
-            assert retrieved_election["creator_public_key"] == election["creator_public_key"]
-            assert retrieved_election["master_ballot_signature"] == election["master_ballot_signature"]
-
         fake_authentication_and_run_callback(app, username, account_type, test)
-
-    # Election Creation
