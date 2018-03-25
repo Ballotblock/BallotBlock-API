@@ -27,21 +27,14 @@ class ECDSAKeyPair:
     def get_public_key_hex_str(self) -> str:
         return str(self.__public.to_string().hex())
 
+    def get_private_key_hex_str(self) -> str:
+        return str(self.__private.to_string().hex())
+
     def sign_with_private_key_and_retrieve_hex_signature(self, plaintext: str) -> str:
         return str(self.__private.sign(plaintext.encode('utf-8')).hex())
 
     def is_signed_with_private_key(self, signature_hex: str, plaintext):
         return self.__public.verify(bytes.fromhex(signature_hex), bytes(plaintext.encode('utf-8')))
-
-
-
-# TODO: Remove this class
-class CryptoSuite:
-    @staticmethod
-    def generate_key_pair() -> ECDSA_256k1_KeyPair:
-        private = SigningKey.generate(curve=ECDSA_CURVE)
-        public = private.get_verifying_key()
-        return ECDSA_256k1_KeyPair(public, private)
 
     @staticmethod
     def is_data_signed(public_key_hex: str, signature_hex: str, plaintext: str) -> bool:

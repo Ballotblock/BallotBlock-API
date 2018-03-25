@@ -16,7 +16,7 @@ import datetime
 import time
 import src.intermediary
 from src.httpcode import *
-from src.crypto_suite import ECDSAKeyPair
+from src.ecdsa_keypair import ECDSAKeyPair
 from src.sqlite import SQLiteBackendIO
 from src.validator import ElectionJsonValidator
 from src.registration import RegistrationServerProvider

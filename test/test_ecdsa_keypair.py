@@ -7,11 +7,11 @@
 
 import unittest
 from ecdsa import SigningKey, VerifyingKey, BadSignatureError
-from src.crypto_suite import CryptoSuite, ECDSA_256k1_KeyPair
+from src.ecdsa_keypair import ECDSAKeyPair
 
 
 class Person:
-    def __init__(self, message: bytes, keys: ECDSA_256k1_KeyPair):
+    def __init__(self, message: bytes, keys: ECDSAKeyPair):
         self.__message = message
         self.__keys = keys
 
@@ -19,17 +19,17 @@ class Person:
         return self.__message
 
     def get_public_key(self) -> VerifyingKey:
-        return self.__keys.public
+        return self.__keys.get_public_key()
 
     def get_private_key(self) -> SigningKey:
-        return self.__keys.private
+        return self.__keys.get_private_key()
 
 
-class KeyTest(unittest.TestCase):
+class ECDSAKeyPairTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.alice = Person(b"All your base are belong to us", CryptoSuite.generate_key_pair())
-        self.bob = Person(b"Somebody set us up the bomb", CryptoSuite.generate_key_pair())
+        self.alice = Person(b"All your base are belong to us", ECDSAKeyPair())
+        self.bob = Person(b"Somebody set us up the bomb", ECDSAKeyPair())
 
     def test_alice_verify_message(self):
         message = self.alice.get_message()
