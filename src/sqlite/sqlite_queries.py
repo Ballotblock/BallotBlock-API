@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS Election
  description                    TEXT NOT NULL,
  start_date                     INT NOT NULL,
  end_date                       INT NOT NULL,
- questions                      TEXT NOT NULL UNIQUE,
+ questions                      TEXT NOT NULL,
  creator_username               TEXT NOT NULL,
  master_ballot_signature        TEXT NOT NULL,
  creator_public_key             TEXT NOT NULL,
