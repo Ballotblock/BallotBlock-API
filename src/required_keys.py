@@ -31,3 +31,14 @@ REQUIRED_ELECTION_KEYS = (
 REQUIRED_ELECTION_SEARCH_BY_TITLE_KEYS = (
     "election_title",  # DO NOT remove this comma
 )
+
+REQUIRED_ELECTION_VOTE_BALLOT_KEYS = (
+    "election_title",
+    "answers"
+)
+
+REQUIRED_ELECTION_VOTE_KEYS = (
+    "ballot",
+    "voter_public_key",
+    "ballot_signature"
+)
