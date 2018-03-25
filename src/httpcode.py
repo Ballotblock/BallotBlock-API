@@ -58,6 +58,9 @@ ELECTION_BALLOT_JSON_MALFORMED = \
 ELECTION_CREATED_SUCCESSFULLY = \
     HttpCode("Election successfully created.", status.HTTP_201_CREATED)
 
+VOTER_CANNOT_CREATE_ELECTION = \
+    HttpCode("Voters are not allowed to create an election.", status.HTTP_400_BAD_REQUEST)
+
 #
 # Election Searching
 #
@@ -68,5 +71,19 @@ ELECTION_SEARCH_BY_TITLE_MISSING_ELECTION_TITLE = \
 ELECTION_NOT_FOUND = \
     HttpCode("Couldn't find an election with this name.", status.HTTP_404_NOT_FOUND)
 
-VOTER_CANNOT_CREATE_ELECTION = \
-    HttpCode("Voters are not allowed to create an election.", status.HTTP_400_BAD_REQUEST)
+#
+# Voting
+#
+
+ELECTION_VOTER_BALLOT_MISSING_TITLE_OR_ANSWERS = \
+    HttpCode("Couldn't find 'election_title' or 'answers'", status.HTTP_400_BAD_REQUEST)
+
+ELECTION_VOTER_BALLOT_MISSING_BALLOT_PUBLIC_KEY_OR_SIGNATURE = \
+    HttpCode("Couldn't find 'ballot', 'voter_public_key', or 'ballot_signature'", status.HTTP_400_BAD_REQUEST)
+
+ELECTION_VOTER_BALLOT_JSON_IS_MALFORMED = \
+    HttpCode("Voter ballot json is malformed", status.HTTP_400_BAD_REQUEST)
+
+ELECTION_VOTER_BALLOT_SIGNING_MISMATCH = \
+    HttpCode("Could not verify that this voter ballot was signed using the provided signature, text, and publickey",
+             status.HTTP_400_BAD_REQUEST)
