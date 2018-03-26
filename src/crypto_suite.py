@@ -14,8 +14,6 @@ import rsa
 import os
 
 ECDSA_CURVE = ecdsa.SECP256k1
-AES_KEY_SIZE = 2048
-
 
 class FernetCrypt:
     def __init__(self, use_fernet_key_b64: bytes = None):
@@ -36,14 +34,18 @@ class FernetCrypt:
 
 
 class RSAKeyPair:
-    def __init__(self, use_public_pkcs1_b64_key: bytes = None, use_private_pkcs1_b64_key: bytes = None):
-        if use_public_pkcs1_b64_key is None and use_private_pkcs1_b64_key is not None \
-                or use_public_pkcs1_b64_key is not None and use_private_pkcs1_b64_key is None:
-            ValueError("Provide a RSA public private key string pair for both parameters.")
+    def __init__(self, use_public_pkcs1_b64_key: bytes = None,
+                       use_private_pkcs1_b64_key: bytes = None,
+                       AES_KEY_SIZE = 2048):
+        if (bool(use_public_pkcs1_b64_key) and not bool(use_private_pkcs1_b64_key)) \
+        or (not bool(use_public_pkcs1_b64_key) and bool(use_private_pkcs1_b64_key)):
+            raise ValueError("Provide a RSA public private key string pair for both parameters.")
 
-        if use_public_pkcs1_b64_key is not None and not use_private_pkcs1_b64_key is not None:
-            self.__public = rsa.PublicKey.load_pkcs1(base64.b64decode(use_public_pkcs1_b64_key))
-            self.__private = rsa.PrivateKey.load_pkcs1(base64.b64decode(use_private_pkcs1_b64_key))
+        if use_public_pkcs1_b64_key and use_private_pkcs1_b64_key:
+            public_str = base64.b64decode(use_public_pkcs1_b64_key).decode('utf-8').strip(" \n\t\r")
+            private_str = base64.b64decode(use_private_pkcs1_b64_key).decode('utf-8').strip(" \n\t\r")
+            self.__public = rsa.PublicKey.load_pkcs1(public_str)
+            self.__private = rsa.PrivateKey.load_pkcs1(private_str)
         else:
             self.__public, self.__private = rsa.newkeys(AES_KEY_SIZE)
 
@@ -61,9 +63,9 @@ class RSAKeyPair:
 
 
 class ECDSAKeyPair:
-    def __init__(self, use_private_hex_key_b64: bytes = None):
-        if use_private_hex_key_b64:
-            self.__private = SigningKey.from_string(base64.b64decode(use_private_hex_key_b64))
+    def __init__(self, use_private_key_b64: bytes = None):
+        if use_private_key_b64:
+            self.__private = SigningKey.from_string(base64.b64decode(use_private_key_b64), curve=ECDSA_CURVE)
         else:
             self.__private = SigningKey.generate(curve=ECDSA_CURVE)
         self.__public = self.__private.get_verifying_key()
@@ -75,13 +77,16 @@ class ECDSAKeyPair:
         return self.__private
 
     def get_public_key_b64(self) -> bytes:
-        return base64.b64encode(self.__public)
+        return base64.b64encode(self.__public.to_string())
 
     def get_private_key_b64(self) -> bytes:
-        return base64.b64encode(self.__private)
+        return base64.b64encode(self.__private.to_string())
 
     def sign_with_private_key_and_retrieve_b64_signature(self, data: bytes) -> bytes:
         return base64.b64encode(self.__private.sign(data))
+
+    def is_signed(self, signature_b64: bytes, data: bytes) -> bool:
+        return self.__public.verify(base64.b64decode(signature_b64), data)
 
 
 def generate_public_private_key_and_encrypted_fernet_key():
