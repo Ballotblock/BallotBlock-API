@@ -6,16 +6,63 @@
 #
 
 from typing import NamedTuple
-import ecdsa
 from ecdsa import SigningKey, VerifyingKey
+from cryptography.fernet import Fernet
+import ecdsa
+import rsa
+import os
 
 ECDSA_CURVE = ecdsa.SECP256k1
-ECDSA_256k1_KeyPair = NamedTuple("ECDSA_256k1_KeyPair", [("public", VerifyingKey), ("private", SigningKey)])
+AES_KEY_SIZE = 2048
+
+class FernetCrypt:
+    def __init__(self, use_key: str = None):
+        if use_key is not None:
+            self.__key = use_key.encode('utf-8')
+        else:
+            self.__key = Fernet.generate_key()
+        self.__fernet = Fernet(self.__key)
+
+    def get_key(self) -> str:
+        return self.__key.decode('utf-8')
+
+    def encrypt(self, plaintext: str) -> str:
+        return self.__fernet.encrypt(plaintext.encode('utf-8')).decode('utf-8')
+
+    def decrypt(self, ciphertext: str) -> str:
+        return self.__fernet.decrypt(ciphertext.encode('utf-8')).decode('utf-8')
+
+class RSAKeyPair:
+    def __init__(self, use_public_pkcs1_key: str = None, use_private_pkcs1_key: str = None):
+        if use_public_pkcs1_key is None and use_private_pkcs1_key is not None \
+           or use_public_pkcs1_key is not None and use_private_pkcs1_key is None:
+           ValueError("Provide a RSA public private key string pair for both parameters.")
+
+        if use_public_pkcs1_key is not None and not use_private_pkcs1_key is not None:
+            self.__public = rsa.PublicKey.load_pkcs1(use_public_pkcs1_key.encode('utf-8'))
+            self.__private = rsa.PrivateKey.load_pkcs1(use_private_pkcs1_key.encode('utf-8'))
+        else:
+            self.__public, self.__private = rsa.newkeys(AES_KEY_SIZE)
+
+    def get_public_key_as_pkcs1(self):
+        return self.__public.save_pkcs1()
+
+    def get_private_key_as_pkcs1(self):
+        return self.__private.save_pkcs1()
+
+    def encrypt_message_with_public_key(self, plaintext: str):
+        return rsa.encrypt(plaintext.encode('utf-8'), self.__public)
+
+    def decrypt_message_with_private_key(self, crypttext: bytes) -> str:
+        return rsa.decrypt(crypttext, self.__private).decode('utf-8')
 
 
 class ECDSAKeyPair:
-    def __init__(self):
-        self.__private = SigningKey.generate(curve=ECDSA_CURVE)
+    def __init__(self, use_private_hex_key: str = None):
+        if use_private_hex_key:
+            self.__private = SigningKey.from_string(bytes.fromhex(use_private_hex_key))
+        else:
+            self.__private = SigningKey.generate(curve=ECDSA_CURVE)
         self.__public = self.__private.get_verifying_key()
 
     def get_public_key(self) -> VerifyingKey:

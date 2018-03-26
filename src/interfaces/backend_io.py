@@ -18,7 +18,13 @@ class BackendIO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def create_ballot(self, ballot: Dict):
+    def create_election(self, master_ballot: Dict = None,
+                        creator_username: str = None,
+                        creator_master_ballot_signature: str = None,
+                        creator_public_key_hex: str = None,
+                        election_private_rsa_key: str = None,
+                        election_public_rsa_key: str = None,
+                        election_encrypted_fernet_key: str = None):
         raise NotImplementedError
 
     @abc.abstractmethod

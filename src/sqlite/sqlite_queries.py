@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS Election
  creator_public_key             TEXT NOT NULL,
  election_public_key            TEXT NOT NULL UNIQUE,
  election_private_key           TEXT NOT NULL UNIQUE,
+ election_encrypted_fernet_key  TEXT NOT NULL UNIQUE,
                                 PRIMARY KEY(election_title))
 """
 
@@ -60,8 +61,9 @@ INSERT INTO Election (
      master_ballot_signature,
      creator_public_key,
      election_public_key,
-     election_private_key)
-VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     election_private_key,
+     election_encrypted_fernet_key)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 INSERT_ELECTION_PARTICIPATION = """

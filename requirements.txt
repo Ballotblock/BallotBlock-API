@@ -4,6 +4,6 @@ passlib==1.7.1
 Flask-API==1.1b2
 ecdsa==0.13
 rsa==3.4.2
-pyaes==1.6.1
+cryptography==2.2.1
 requests==2.18.4
 urllib3==1.22

@@ -41,12 +41,13 @@ class SQLiteBackendIO(BackendIO):
                         creator_username: str = None,
                         creator_master_ballot_signature: str = None,
                         creator_public_key_hex: str = None,
-                        election_public_key_hex: str = None,
-                        election_private_key_hex: str = None):
+                        election_public_rsa_key: str = None,
+                        election_private_rsa_key: str = None,
+                        election_encrypted_fernet_key: str = None):
 
-        assert master_ballot and creator_username and creator_master_ballot_signature and \
-               creator_public_key_hex and election_private_key_hex \
-               and election_public_key_hex
+        assert creator_username and creator_master_ballot_signature and \
+               creator_master_ballot_signature and creator_public_key_hex and \
+               election_private_rsa_key and election_public_rsa_key and election_encrypted_fernet_key
 
         if self.get_election_by_title(master_ballot['election_title']) is not None:
             raise ValueError("Can't create duplicate election.")
@@ -60,8 +61,9 @@ class SQLiteBackendIO(BackendIO):
             creator_username,
             creator_master_ballot_signature,
             creator_public_key_hex,
-            election_public_key_hex,
-            election_private_key_hex
+            election_public_rsa_key,
+            election_private_rsa_key,
+            election_encrypted_fernet_key
         ))
 
         self.connection.commit()
@@ -90,6 +92,7 @@ class SQLiteBackendIO(BackendIO):
             "creator_public_key": result[7],
             "election_public_key": result[8],
             "election_private_key": result[9],
+            "election_encrypted_fernet_key": result[10]
         }
 
         return output

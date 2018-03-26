@@ -63,13 +63,13 @@ def fake_authentication_and_run_callback(app, username: str, account_type: str, 
         callback()
 
 
-def get_test_client_without_registration_or_validation_and_empty_db():
+def get_test_client_without_registration_or_validation_and_empty_db(db_path=":memory:"):
     registration_provider = RegistrationServerProvider()
     election_json_validator = ElectionJsonValidator()
     election_json_validator.is_valid = MagicMock(return_value=(True, ""))
     registration_provider.is_user_registered = MagicMock(return_value=True)
     return src.intermediary.start_test_sqlite(
-        backend_io=SQLiteBackendIO(":memory:"),
+        backend_io=SQLiteBackendIO(db_path),
         election_json_validator=election_json_validator,
         registration_provider=registration_provider
     )
@@ -91,7 +91,7 @@ class IntermediaryTest(unittest.TestCase):
         fake_authentication_and_run_callback(app, username, account_type, test)
 
     def test_election_creator_can_create_multiple_elections(self):
-        app = get_test_client_without_registration_or_validation_and_empty_db()
+        app = get_test_client_without_registration_or_validation_and_empty_db("/home/sam/SOPHIE.db")
         username = "Samulus"
         account_type = "ElectionCreator"
         number_of_elections = 3
