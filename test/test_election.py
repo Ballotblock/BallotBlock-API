@@ -75,8 +75,7 @@ def get_test_client_without_registration_or_validation_and_empty_db(db_path=":me
     )
 
 
-class IntermediaryTest(unittest.TestCase):
-    # Election Creation
+class ElectionTest(unittest.TestCase):
     def test_election_creator_can_create_single_election(self):
         app = get_test_client_without_registration_or_validation_and_empty_db()
         username = "Samulus"
@@ -106,10 +105,6 @@ class IntermediaryTest(unittest.TestCase):
 
         fake_authentication_and_run_callback(app, username, account_type, test)
 
-    #
-    # Election Retrieval / Search
-    #
-
     def test_election_creator_data_is_stored_correctly(self):
         app = get_test_client_without_registration_or_validation_and_empty_db()
         username = "Samulus"
@@ -120,5 +115,8 @@ class IntermediaryTest(unittest.TestCase):
             response = app.post("/api/election/create", headers=JSON_HEADERS, data=json.dumps(election))
             assert response.data.decode('utf-8') == ELECTION_CREATED_SUCCESSFULLY.message
             assert response.status_code == ELECTION_CREATED_SUCCESSFULLY.code
+
+            # TODO: Data is stored correctly
+            # TODO: User can verify that their ECDSA signature was unmodified
 
         fake_authentication_and_run_callback(app, username, account_type, test)
