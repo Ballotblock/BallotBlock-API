@@ -66,7 +66,11 @@ class SQLiteBackendIO(BackendIO):
 
         self.connection.commit()
 
-    def create_ballot(self, ballot: Dict):
+    def create_ballot(self, ballot_encrypted_json_str: str = None,
+                            ballot_signature_str: str = None,
+                            voter_uuid: str = None,
+                            voter_public_key_hex: str = None,
+        ):
         raise NotImplementedError
 
     def get_election_by_title(self, election_title: str) -> Optional[Dict]:
