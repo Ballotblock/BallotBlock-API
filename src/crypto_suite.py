@@ -13,7 +13,6 @@ import ecdsa
 import rsa
 import os
 
-ECDSA_CURVE = ecdsa.SECP256k1
 
 class FernetCrypt:
     def __init__(self, use_fernet_key_b64: bytes = None):
@@ -61,7 +60,7 @@ class RSAKeyPair:
     def decrypt_b64_to_bytes(self, ciphertext_b64: bytes) -> bytes:
         return rsa.decrypt(base64.b64decode(ciphertext_b64), self.__private)
 
-
+ECDSA_CURVE = ecdsa.SECP256k1
 class ECDSAKeyPair:
     def __init__(self, use_private_key_b64: bytes = None):
         if use_private_key_b64:
@@ -87,10 +86,3 @@ class ECDSAKeyPair:
 
     def is_signed(self, signature_b64: bytes, data: bytes) -> bool:
         return self.__public.verify(base64.b64decode(signature_b64), data)
-
-
-def generate_public_private_key_and_encrypted_fernet_key():
-    election_rsa = RSAKeyPair()
-    election_fernet = FernetCrypt()
-    election_key_encrypted_hex = election_rsa.encrypt_message_with_public_key()
-    pass
