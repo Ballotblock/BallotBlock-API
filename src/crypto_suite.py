@@ -13,14 +13,19 @@ import ecdsa
 import rsa
 import os
 
+ECDSA_CURVE = ecdsa.SECP256k1
+
 
 class FernetCrypt:
-    def __init__(self, use_fernet_key_b64: bytes = None):
-        if use_fernet_key_b64 is not None:
-            self.__key = base64.b64decode(use_fernet_key_b64)
+    def __init__(self, use_fernet_key_bytes: bytes = None):
+        if use_fernet_key_bytes is not None:
+            self.__key = use_fernet_key_bytes
         else:
             self.__key = Fernet.generate_key()
         self.__fernet = Fernet(self.__key)
+
+    def get_key_as_bytes(self) -> bytes:
+        return self.__key
 
     def get_key_as_b64(self) -> bytes:
         return base64.b64encode(self.__key)
@@ -34,10 +39,10 @@ class FernetCrypt:
 
 class RSAKeyPair:
     def __init__(self, use_public_pkcs1_b64_key: bytes = None,
-                       use_private_pkcs1_b64_key: bytes = None,
-                       AES_KEY_SIZE = 2048):
+                 use_private_pkcs1_b64_key: bytes = None,
+                 AES_KEY_SIZE=512):
         if (bool(use_public_pkcs1_b64_key) and not bool(use_private_pkcs1_b64_key)) \
-        or (not bool(use_public_pkcs1_b64_key) and bool(use_private_pkcs1_b64_key)):
+                or (not bool(use_public_pkcs1_b64_key) and bool(use_private_pkcs1_b64_key)):
             raise ValueError("Provide a RSA public private key string pair for both parameters.")
 
         if use_public_pkcs1_b64_key and use_private_pkcs1_b64_key:
@@ -60,7 +65,6 @@ class RSAKeyPair:
     def decrypt_b64_to_bytes(self, ciphertext_b64: bytes) -> bytes:
         return rsa.decrypt(base64.b64decode(ciphertext_b64), self.__private)
 
-ECDSA_CURVE = ecdsa.SECP256k1
 class ECDSAKeyPair:
     def __init__(self, use_private_key_b64: bytes = None):
         if use_private_key_b64:
