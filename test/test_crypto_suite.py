@@ -7,7 +7,10 @@
 
 import unittest
 import base64
-from src.crypto_suite import ECDSAKeyPair, RSAKeyPair, FernetCrypt
+import json
+from ecdsa import SigningKey,VerifyingKey
+from src.crypto_suite import ECDSAKeyPair, RSAKeyPair, FernetCrypt, ECDSA_CURVE
+from src.crypto_flow import verify_data_is_signed_ecdsa
 
 # These keys are unimportant and are only used for verifying that
 # b64 conversion / serialization works correctly. Do not use them for
@@ -45,7 +48,7 @@ class FernetCryptTest(unittest.TestCase):
 
     def test_fernet_key_serialization(self):
         fernet_key = FernetCrypt()
-        fernet_key_serialized = FernetCrypt(fernet_key.get_key_as_b64())
+        fernet_key_serialized = FernetCrypt(fernet_key.get_key_as_bytes())
 
         # Verify that the keys are the same
         assert fernet_key.get_key_as_b64() == fernet_key_serialized.get_key_as_b64()
@@ -103,4 +106,14 @@ class ECDSAKeyPairTest(unittest.TestCase):
 
         assert ecdsa_key.get_private_key_b64() == ecdsa_key_clone.get_private_key_b64()
         assert ecdsa_key.get_public_key_b64() == ecdsa_key_clone.get_public_key_b64()
+
+    def test_ecdsa_signing(self):
+        ecdsa_key = ECDSAKeyPair()
+        data = json.dumps({ "Don't" : "Care" })
+        signature = ecdsa_key.sign_with_private_key_and_retrieve_b64_signature(data.encode('utf-8'))
+        public_key = base64.b64decode(ecdsa_key.get_public_key_b64())
+
+        # Create a VerifyingKey from a ECDSAKeyPair, we can use this key
+        vk = VerifyingKey.from_string(base64.b64decode(ecdsa_key.get_public_key_b64()), curve=ECDSA_CURVE)
+        assert vk.verify(base64.b64decode(signature), data.encode('utf-8'))
 
