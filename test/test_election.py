@@ -35,8 +35,10 @@ class ElectionTest(unittest.TestCase):
 
     def test_election_creator_can_create_election(self):
         username = "Test Election Creator"
-        account_type = "ElectionCreator"
         election_creator_ecdsa_keys = ECDSAKeyPair()
+        self.session_manager.get_username = MagicMock(return_value=username)
+        self.session_manager.election_creator_is_logged_in = MagicMock(return_value=True)
+        self.session_manager.voter_is_logged_in = MagicMock(return_value=False)
 
         app = src.intermediary.start_test_sqlite(
             backend_io=SQLiteBackendIO(":memory:"),
