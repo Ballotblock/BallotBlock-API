@@ -21,11 +21,6 @@ import datetime
 
 JSON_HEADERS = {"Content-Type": "application/json"}
 
-
-#
-# TODO: Mock out the public private key generation
-#
-
 class VotingTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
