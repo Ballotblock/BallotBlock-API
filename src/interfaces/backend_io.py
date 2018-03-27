@@ -9,22 +9,21 @@ import abc
 
 
 class BackendIO(abc.ABC):
-    @abc.abstractmethod
-    def create_election(self, master_ballot: Dict,
-                        creator_master_ballot_signature: str = None,
-                        creator_public_key_hex: str = None,
-                        backend_public_key_hex: str = None,
-                        backend_private_key_hex: str = None):
-        raise NotImplementedError
 
     @abc.abstractmethod
     def create_election(self, master_ballot: Dict = None,
                         creator_username: str = None,
                         creator_master_ballot_signature: str = None,
-                        creator_public_key_hex: str = None,
+                        creator_public_key_b64: str = None,
                         election_private_rsa_key: str = None,
                         election_public_rsa_key: str = None,
                         election_encrypted_fernet_key: str = None):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def create_ballot(self, ballot: str,
+                            ballot_signature: str = None,
+                            voter_public_key_b64: str = None):
         raise NotImplementedError
 
     @abc.abstractmethod

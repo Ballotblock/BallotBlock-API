@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS ElectionParticipation
 CREATE_BALLOT_TABLE = """
 CREATE TABLE IF NOT EXISTS Ballot
 (voter_id            TEXT NOT NULL UNIQUE,
- answers             TEXT NOT NULL,
+ ballot              TEXT NOT NULL,
  election_title      TEXT NOT NULL UNIQUE,
                      FOREIGN KEY(election_title) REFERENCES Election(election_title)
                      PRIMARY KEY(voter_id))
@@ -76,7 +76,7 @@ VALUES(?, ?)
 INSERT_BALLOT = """
 INSERT INTO Ballot (
      voter_id,
-     answers,
+     ballot,
      election_title)
 VALUES(?, ?, ?)
 """

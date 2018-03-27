@@ -25,6 +25,7 @@ from typing import Optional, Dict
 from src.interfaces.backend_io import BackendIO
 from .sqlite_queries import *
 import sqlite3
+import json
 
 
 class SQLiteBackendIO(BackendIO):
@@ -40,13 +41,13 @@ class SQLiteBackendIO(BackendIO):
     def create_election(self, master_ballot: Dict = None,
                         creator_username: str = None,
                         creator_master_ballot_signature: str = None,
-                        creator_public_key_hex: str = None,
+                        creator_public_key_b64: str = None,
                         election_public_rsa_key: str = None,
                         election_private_rsa_key: str = None,
                         election_encrypted_fernet_key: str = None):
 
         assert creator_username and creator_master_ballot_signature and \
-               creator_master_ballot_signature and creator_public_key_hex and \
+               creator_master_ballot_signature and creator_public_key_b64 and \
                election_private_rsa_key and election_public_rsa_key and election_encrypted_fernet_key
 
         if self.get_election_by_title(master_ballot['election_title']) is not None:
@@ -60,7 +61,7 @@ class SQLiteBackendIO(BackendIO):
             master_ballot['questions'],
             creator_username,
             creator_master_ballot_signature,
-            creator_public_key_hex,
+            creator_public_key_b64,
             election_public_rsa_key,
             election_private_rsa_key,
             election_encrypted_fernet_key
@@ -68,12 +69,27 @@ class SQLiteBackendIO(BackendIO):
 
         self.connection.commit()
 
-    def create_ballot(self, ballot_encrypted_json_str: str = None,
-                            ballot_signature_str: str = None,
-                            voter_uuid: str = None,
-                            voter_public_key_hex: str = None,
-        ):
-        raise NotImplementedError
+    def create_ballot(self, ballot: str,
+                      election_title: str = None,
+                      voter_uuid: str = None,
+                      ballot_signature: str = None,
+                      voter_public_key_b64: str = None):
+
+        assert election_title and voter_uuid and \
+               ballot_signature and voter_public_key_b64
+
+        result = self.get_election_by_title(election_title)
+        if result is None:
+            raise ValueError("Can't create ballot for non-existent election")
+
+        self.cursor.execute(INSERT_BALLOT, (
+            voter_uuid,
+            ballot,
+            election_title,
+        ))
+
+        self.connection.commit()
+
 
     def get_election_by_title(self, election_title: str) -> Optional[Dict]:
         self.cursor.execute(SELECT_ELECTION_BY_TITLE, (election_title,))
@@ -96,6 +112,7 @@ class SQLiteBackendIO(BackendIO):
         }
 
         return output
+
 
     def get_ballot_by_id(self, ballot_id: str):
         raise NotImplementedError
