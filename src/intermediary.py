@@ -35,6 +35,7 @@ from src.interfaces import BackendIO
 from src import required_keys
 from src.crypto_suite import ECDSAKeyPair, FernetCrypt, RSAKeyPair
 from src.crypto_flow import verify_data_is_signed_ecdsa
+from src.time_manager import TimeManager
 import json
 import uuid
 import time
@@ -51,6 +52,7 @@ BACKEND_IO = None
 SESSION_MANAGER = SessionManager()
 REGISTRATION_PROVIDER = RegistrationServerProvider()
 ELECTION_JSON_VALIDATOR = ElectionJsonValidator()
+TIME_MANAGER = TimeManager()
 
 app.config['SECRET_KEY'] = str(uuid.uuid4())
 app.config['PROPAGATE_EXCEPTIONS'] = True
@@ -60,7 +62,8 @@ app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
 def start_test_sqlite(backend_io: BackendIO = None,
                       session_manager=SessionManager(),
                       registration_provider=RegistrationServerProvider(),
-                      election_json_validator=ElectionJsonValidator()
+                      election_json_validator=ElectionJsonValidator(),
+                      time_manager=TimeManager()
                       ):
     if backend_io is None:
         raise ValueError("backend_io can't be none")
@@ -69,11 +72,13 @@ def start_test_sqlite(backend_io: BackendIO = None,
     global SESSION_MANAGER
     global REGISTRATION_PROVIDER
     global ELECTION_JSON_VALIDATOR
+    global TIME_MANAGER
 
     BACKEND_IO = backend_io
     SESSION_MANAGER = session_manager
     REGISTRATION_PROVIDER = registration_provider
     ELECTION_JSON_VALIDATOR = election_json_validator
+    TIME_MANAGER = time_manager
 
     test_app = app.test_client()
     test_app.testing = True
@@ -220,7 +225,7 @@ def election_get_by_title():
         return httpcode.ELECTION_NOT_FOUND
 
     # Remove the private_key if the election hasn't ended yet.
-    if int(time.time()) < result['end_date']:
+    if TIME_MANAGER.election_in_progress(result['end_date']):
         result.pop('election_private_key')
 
     return jsonify(result), 200
