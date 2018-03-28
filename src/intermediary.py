@@ -191,9 +191,9 @@ def election_create() -> httpcode.HttpCode:
         creator_username=SESSION_MANAGER.get_username(session),
         creator_master_ballot_signature=content['master_ballot_signature'],
         creator_public_key_b64=content['creator_public_key'],
-        election_private_rsa_key=election_rsa.get_private_key_as_pkcs1_b64(),
-        election_public_rsa_key=election_rsa.get_public_key_as_pkcs1_b64(),
-        election_encrypted_fernet_key=election_encrypted_fernet_key
+        election_private_rsa_key=election_rsa.get_private_key_as_pkcs1_b64().decode('utf-8'),
+        election_public_rsa_key=election_rsa.get_public_key_as_pkcs1_b64().decode('utf-8'),
+        election_encrypted_fernet_key=election_encrypted_fernet_key.decode('utf-8')
     )
 
     return httpcode.ELECTION_CREATED_SUCCESSFULLY
