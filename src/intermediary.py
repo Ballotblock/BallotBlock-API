@@ -296,3 +296,27 @@ def election_cast_vote():
     )
 
     return str(voter_uuid), 201
+
+
+@app.route("/api/ballot/get", methods=["GET", "POST"])
+def get_voter_ballot_by_voter_uuid():
+    # Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
+
+    # Check if any JSON was supplied at all
+    content = request.get_json(silent=True, force=True)
+    if content is None:
+        return httpcode.MISSING_OR_MALFORMED_JSON
+
+    # Verify the voter UUID is present
+    if "voter_uuid" not in content:
+        return "Missing voter_uuid", 400
+
+    # Ask the backend if this voter exists
+    result = BACKEND_IO.get_ballot_by_voter_uuid(content['voter_uuid'])
+    if result is None:
+        return "Could not find a voter_ballot with this uuid", 404
+
+    # Return the found content
+    return jsonify(result), 200

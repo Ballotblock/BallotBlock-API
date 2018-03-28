@@ -31,7 +31,7 @@ class BackendIO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_ballot_by_id(self, voter_id: str) -> Optional[Dict]:
+    def get_ballot_by_voter_uuid(self, voter_uuid: str) -> Optional[Dict]:
         raise NotImplementedError
 
     @abc.abstractmethod

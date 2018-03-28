@@ -90,7 +90,6 @@ class SQLiteBackendIO(BackendIO):
 
         self.connection.commit()
 
-
     def get_election_by_title(self, election_title: str) -> Optional[Dict]:
         self.cursor.execute(SELECT_ELECTION_BY_TITLE, (election_title,))
         result = self.cursor.fetchone()
@@ -113,9 +112,17 @@ class SQLiteBackendIO(BackendIO):
 
         return output
 
+    def get_ballot_by_voter_uuid(self, voter_uuid: str):
+        self.cursor.execute(SELECT_BALLOT_BY_VOTER_UUID, (voter_uuid,))
+        result = self.cursor.fetchone()
+        if result is None:
+            return None
 
-    def get_ballot_by_id(self, ballot_id: str):
-        raise NotImplementedError
+        return {
+            "voter_uuid": result[0],
+            "ballot": result[1],
+            "election_title": result[2]
+        }
 
     def has_user_participated_in_election(self, username: str, election_title: str) -> bool:
         raise NotImplementedError

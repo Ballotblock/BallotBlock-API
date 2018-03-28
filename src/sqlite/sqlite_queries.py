@@ -39,11 +39,11 @@ CREATE TABLE IF NOT EXISTS ElectionParticipation
 # An individual ballot
 CREATE_BALLOT_TABLE = """
 CREATE TABLE IF NOT EXISTS Ballot
-(voter_id            TEXT NOT NULL UNIQUE,
+(voter_uuid            TEXT NOT NULL UNIQUE,
  ballot              TEXT NOT NULL,
  election_title      TEXT NOT NULL UNIQUE,
                      FOREIGN KEY(election_title) REFERENCES Election(election_title)
-                     PRIMARY KEY(voter_id))
+                     PRIMARY KEY(voter_uuid))
 """
 
 #
@@ -75,7 +75,7 @@ VALUES(?, ?)
 
 INSERT_BALLOT = """
 INSERT INTO Ballot (
-     voter_id,
+     voter_uuid,
      ballot,
      election_title)
 VALUES(?, ?, ?)
@@ -90,9 +90,9 @@ SELECT * from Election WHERE
     election_title = (?)
 """
 
-SELECT_BALLOT_BY_ID = """
+SELECT_BALLOT_BY_VOTER_UUID = """
 SELECT * from Ballot WHERE
-    voter_id = (?)
+    voter_uuid = (?)
 """
 
 SELECT_ELECTION_PARTICIPATION_BY_USERNAME = """
