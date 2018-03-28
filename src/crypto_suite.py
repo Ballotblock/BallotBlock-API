@@ -40,7 +40,7 @@ class FernetCrypt:
 class RSAKeyPair:
     def __init__(self, use_public_pkcs1_b64_key: bytes = None,
                  use_private_pkcs1_b64_key: bytes = None,
-                 AES_KEY_SIZE=512):
+                 AES_KEY_SIZE=2048):
         if (bool(use_public_pkcs1_b64_key) and not bool(use_private_pkcs1_b64_key)) \
                 or (not bool(use_public_pkcs1_b64_key) and bool(use_private_pkcs1_b64_key)):
             raise ValueError("Provide a RSA public private key string pair for both parameters.")
