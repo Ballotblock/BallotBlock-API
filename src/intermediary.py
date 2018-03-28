@@ -38,7 +38,6 @@ from src.crypto_flow import verify_data_is_signed_ecdsa
 import json
 import uuid
 import time
-import base64
 
 app = Flask(__name__)
 
