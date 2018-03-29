@@ -260,6 +260,12 @@ def election_cast_vote():
     if election is None:
         return httpcode.ELECTION_NOT_FOUND
 
+    # Verify the user has not already participated in this election
+    username = SESSION_MANAGER.get_username(session)
+    if BACKEND_IO.has_user_participated_in_election(username, ballot['election_title']):
+        return httpcode.ELECTION_VOTER_VOTED_ALREADY
+
+
     # TODO: Verify that the provided answers match the question options!
     # TODO: Verify that the election hasn't ended already
 
@@ -295,6 +301,8 @@ def election_cast_vote():
         ballot_signature=content['ballot_signature'],
         voter_public_key_b64=content['voter_public_key'],
     )
+
+    BACKEND_IO.register_user_as_participated_in_election(username, ballot['election_title'])
 
     return str(voter_uuid), 201
 

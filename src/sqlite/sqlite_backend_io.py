@@ -124,8 +124,18 @@ class SQLiteBackendIO(BackendIO):
             "election_title": result[2]
         }
 
+    def register_user_as_participated_in_election(self, username: str, election_title: str):
+        if self.get_election_by_title(election_title) is None:
+            raise ValueError("Can't register user as having participated in non-existent election")
+        self.cursor.execute(INSERT_ELECTION_PARTICIPATION, (election_title, username,))
+        self.connection.commit()
+
     def has_user_participated_in_election(self, username: str, election_title: str) -> bool:
-        raise NotImplementedError
+        if self.get_election_by_title(election_title) is None:
+            raise ValueError("Can't check if user has participated in non-existent election")
+        self.cursor.execute(SELECT_ELECTION_PARTICIPATION_BY_USERNAME, (username,))
+        result = self.cursor.fetchone()
+        return result is not None
 
     def close(self):
         self.connection.close()

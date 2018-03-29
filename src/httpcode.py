@@ -75,6 +75,9 @@ ELECTION_NOT_FOUND = \
 # Voting
 #
 
+ELECTION_VOTER_VOTED_ALREADY = \
+    HttpCode("Voter has participated in this election already", status.HTTP_400_BAD_REQUEST)
+
 ELECTION_VOTER_BALLOT_MISSING_TITLE_OR_ANSWERS = \
     HttpCode("Couldn't find 'election_title' or 'answers'", status.HTTP_400_BAD_REQUEST)
 

@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS Election
 # Used to prevent a user from voting in the same election twice.
 CREATE_ELECTION_PARTICIPATION_TABLE = """
 CREATE TABLE IF NOT EXISTS ElectionParticipation
-(election_title TEXT NOT NULL UNIQUE,
+(election_title TEXT NOT NULL,
  username       TEXT NOT NULL,
                 FOREIGN KEY(election_title) REFERENCES Election(election_title)
                 PRIMARY KEY(election_title))
@@ -39,9 +39,9 @@ CREATE TABLE IF NOT EXISTS ElectionParticipation
 # An individual ballot
 CREATE_BALLOT_TABLE = """
 CREATE TABLE IF NOT EXISTS Ballot
-(voter_uuid            TEXT NOT NULL UNIQUE,
+(voter_uuid          TEXT NOT NULL UNIQUE,
  ballot              TEXT NOT NULL,
- election_title      TEXT NOT NULL UNIQUE,
+ election_title      TEXT NOT NULL,
                      FOREIGN KEY(election_title) REFERENCES Election(election_title)
                      PRIMARY KEY(voter_uuid))
 """

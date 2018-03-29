@@ -35,5 +35,9 @@ class BackendIO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def register_user_as_participated_in_election(self, username: str, election_title: str) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def has_user_participated_in_election(self, username: str, election_title: str) -> bool:
         raise NotImplementedError
