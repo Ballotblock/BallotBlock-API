@@ -11,8 +11,6 @@ from typing import Dict
 from src.crypto_suite import ECDSAKeyPair, RSAKeyPair, FernetCrypt, ECDSA_CURVE
 
 
-
-
 class CryptoFlow:
     @staticmethod
     def generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict() -> Dict:
@@ -54,3 +52,19 @@ class CryptoFlow:
             return False
 
         return True
+
+    @staticmethod
+    def decrypt_ballot(
+            encrypted_ballot_str: str = None,
+            election_rsa_public_key_b64: str = None,
+            election_rsa_private_key_b64: str = None,
+            election_encrypted_fernet_key_b64: str = None) -> str:
+
+        election_rsa = RSAKeyPair(
+            use_public_pkcs1_b64_key=election_rsa_public_key_b64,
+            use_private_pkcs1_b64_key=election_rsa_private_key_b64,
+        )
+
+        decrypted_fernet_key = election_rsa.decrypt_b64_to_bytes(election_encrypted_fernet_key_b64.encode('utf-8'))
+        fernet = FernetCrypt(decrypted_fernet_key)
+        return fernet.decrypt_b64_to_bytes(encrypted_ballot_str.encode('utf-8')).decode('utf-8')
