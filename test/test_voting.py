@@ -79,7 +79,7 @@ class VotingTest(unittest.TestCase):
         self.session_manager.voter_is_logged_in = MagicMock(return_value=True)
         self.session_manager.get_username = MagicMock(return_value="Test Voter")
 
-    def test_voter_can_vote_in_election(self):
+    def test_voter_can_vote_in_election_once(self):
         # Cast a vote as a voter
         voter_ecdsa_keys = ECDSAKeyPair()
         ballot = generate_voter_post_data(
@@ -90,6 +90,15 @@ class VotingTest(unittest.TestCase):
 
         # Verify that the vote was cast
         response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(ballot))
+        assert response.status_code == 201
+        try:
+            uuid.UUID(response.data.decode('utf-8'), version=4)
+        except ValueError:
+            self.fail("The server should have returned a uuid4!")
+
+        # Disallow a user from voting twice in the same election. The username is used to detect this.
+        response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(ballot))
+        assert ELECTION_VOTER_VOTED_ALREADY.message == response.data.decode('utf-8')
 
     def test_voter_can_retrieve_their_ballot_with_returned_voter_uuid(self):
         # Cast a vote as a voter
@@ -104,12 +113,9 @@ class VotingTest(unittest.TestCase):
         response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(ballot))
         voter_uuid = response.data.decode('utf-8')
 
-        # Verify that the server did return a uuid4
-        try:
-            uuid.UUID(voter_uuid, version=4)
-        except ValueError:
-            self.fail("The server should have returned a uuid4!")
+        uuid.UUID(voter_uuid, version=4) # Will throw if the server didn't throw a uuid4
 
+        # Verify that the correct data is retrieved from the backend.
         data = json.dumps({'voter_uuid': voter_uuid})
         response = self.app.post("/api/ballot/get", headers=JSON_HEADERS, data=data)
         retrieved_ballot = json.loads(response.data)
