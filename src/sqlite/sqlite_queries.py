@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS Election
  creator_public_key             TEXT NOT NULL,
  election_public_key            TEXT NOT NULL UNIQUE,
  election_private_key           TEXT NOT NULL UNIQUE,
+ election_encrypted_fernet_key  TEXT NOT NULL UNIQUE,
                                 PRIMARY KEY(election_title))
 """
 
@@ -29,7 +30,7 @@ CREATE TABLE IF NOT EXISTS Election
 # Used to prevent a user from voting in the same election twice.
 CREATE_ELECTION_PARTICIPATION_TABLE = """
 CREATE TABLE IF NOT EXISTS ElectionParticipation
-(election_title TEXT NOT NULL UNIQUE,
+(election_title TEXT NOT NULL,
  username       TEXT NOT NULL,
                 FOREIGN KEY(election_title) REFERENCES Election(election_title)
                 PRIMARY KEY(election_title))
@@ -38,11 +39,11 @@ CREATE TABLE IF NOT EXISTS ElectionParticipation
 # An individual ballot
 CREATE_BALLOT_TABLE = """
 CREATE TABLE IF NOT EXISTS Ballot
-(voter_id            TEXT NOT NULL UNIQUE,
- answers             TEXT NOT NULL,
- election_title      TEXT NOT NULL UNIQUE,
+(voter_uuid          TEXT NOT NULL UNIQUE,
+ ballot              TEXT NOT NULL,
+ election_title      TEXT NOT NULL,
                      FOREIGN KEY(election_title) REFERENCES Election(election_title)
-                     PRIMARY KEY(voter_id))
+                     PRIMARY KEY(voter_uuid))
 """
 
 #
@@ -60,8 +61,9 @@ INSERT INTO Election (
      master_ballot_signature,
      creator_public_key,
      election_public_key,
-     election_private_key)
-VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     election_private_key,
+     election_encrypted_fernet_key)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 INSERT_ELECTION_PARTICIPATION = """
@@ -73,8 +75,8 @@ VALUES(?, ?)
 
 INSERT_BALLOT = """
 INSERT INTO Ballot (
-     voter_id,
-     answers,
+     voter_uuid,
+     ballot,
      election_title)
 VALUES(?, ?, ?)
 """
@@ -88,9 +90,9 @@ SELECT * from Election WHERE
     election_title = (?)
 """
 
-SELECT_BALLOT_BY_ID = """
+SELECT_BALLOT_BY_VOTER_UUID = """
 SELECT * from Ballot WHERE
-    voter_id = (?)
+    voter_uuid = (?)
 """
 
 SELECT_ELECTION_PARTICIPATION_BY_USERNAME = """

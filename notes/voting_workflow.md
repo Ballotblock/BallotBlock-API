@@ -38,13 +38,13 @@ request with the following format:
             ["Favorite Shape?", ["Square", "Triangle"]]
          ]
     },
-    "creator_public_key": "24a58f407e478b9bf78b216ac822a97469dca6f1e79ac28adabcb3e2e42477830174e1db2ab5b8ce0988807fa6c886ad7ffbdbfa5e5e6f47fbf4119b3017358e",
-    "master_ballot_signature": "5df34b734e8fa793b6c46f51e331ffaa9dad3c0046db0c4270efc1ca62ec44c01300b9e1766aed5f7dac23e29a1a02e102b896820d9d9b9c297ae9366e49a0f3"
+    "creator_public_key": "JKWPQH5Hi5v3iyFqyCKpdGncpvHnmsKK2ryz4uQkd4MBdOHbKrW4zgmIgH+myIatf/vb+l5eb0f79BGbMBc1jg==",
+    "master_ballot_signature": 'XfNLc06Pp5O2xG9R4zH/qp2tPABG2wxCcO/BymLsRMATALnhdmrtX32sI+KaGgLhAriWgg2dm5wpeuk2bkmg8w=='
 }
 ```
 
-* ``master_ballot`` should be a JSON object in string format, it should be plaintext.
-* ``creator_public_key`` key should be a **ecdsa.SECP256k1** public key in **hex** format.
+* ``master_ballot`` should be a JSON object in string (UTF-8) format.
+* ``creator_public_key`` key should be a **ecdsa.SECP256k1** public key in **base64** format.
 * ``master_ballot_signature`` should be the ``master_ballot`` string but signed using the ``creator_public_key``'s corresponding private key.
 
 This JSON POST should be sent to the server endpoint ```/api/election/create```.
@@ -80,13 +80,14 @@ When a user wants to vote, they must send a JSON POST request with the following
         'election_title': 'The Favorite Color and Shape Election',
         'answers': '['Red', 'Triangle']'
     }",
-    voter_public_key: "40fb25466ca793576d9d9ba1cc69cc7c4e57c7004e05865bd1b137448ad91e8ce451f6901dfa9b99d3b0c36ba73036b47a13ad6dc999d5d874d34383770c4364",
-    ballot_signature: "700ac31fadffc51fe66dccfb8c7951029718b163827515f5519ee325481cd657b7bd68e57079c7702c0ae4eef37da3a4656f499d572c5bed68f8fbf30f1eb37a"
+    voter_public_key: "QPslRmynk1dtnZuhzGnMfE5XxwBOBYZb0bE3RIrZHozkUfaQHfqbmdOww2unMDa0ehOtbcmZ1dh000ODdwxDZA=="
+    ballot_signature: "cArDH63/xR/mbcz7jHlRApcYsWOCdRX1UZ7jJUgc1le3vWjlcHnHcCwK5O7zfaOkZW9JnVcsW+1o+PvzDx6zeg=="
+
 }
 ```
 
 * ``ballot`` should be a JSON object in string format. It should contain the ``election_title`` and an array of ``answers`` that directly correspond to the ``questions`` in the specified election.
-* ``voter_public_key`` should be a **ecdsa.SECP256k1** public key in **hex** format.
+* ``voter_public_key`` should be a **ecdsa.SECP256k1** public key in **base64** format.
 * ``ballot_signature`` should be the ``ballot`` json object in string format but signed using ``voter_public_key``'s corresponding private key.
 
 This JSON POST should be sent to the API endpoint: ```/api/election/vote```
