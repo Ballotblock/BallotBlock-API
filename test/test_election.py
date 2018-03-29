@@ -11,9 +11,10 @@ import unittest
 import datetime
 import time
 import src.intermediary
-from test.test_util import generate_election_post_data, generate_voter_post_data
+from test.test_util import generate_election_post_data, generate_voter_post_data, ELECTION_DUMMY_RSA_FERNET
 from src.httpcode import *
 from src.crypto_suite import ECDSAKeyPair
+from src.crypto_flow import CryptoFlow
 from src.sqlite import SQLiteBackendIO
 from src.sessions.session_manager import SessionManager
 from src.validator import ElectionJsonValidator
@@ -51,7 +52,11 @@ class ElectionTest(unittest.TestCase):
         self.start_date = int(time.time())
         self.end_date = int((datetime.datetime.now() + datetime.timedelta(days=1)).timestamp())
 
+
     def setUp(self):
+        CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
+            return_value=ELECTION_DUMMY_RSA_FERNET)
+
         # Setup an election
         self.app = src.intermediary.start_test_sqlite(
             backend_io=SQLiteBackendIO(":memory:"),
