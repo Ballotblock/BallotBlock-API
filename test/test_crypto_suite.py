@@ -10,7 +10,6 @@ import base64
 import json
 from ecdsa import SigningKey,VerifyingKey
 from src.crypto_suite import ECDSAKeyPair, RSAKeyPair, FernetCrypt, ECDSA_CURVE
-from src.crypto_flow import verify_data_is_signed_ecdsa
 
 # These keys are unimportant and are only used for verifying that
 # b64 conversion / serialization works correctly. Do not use them for
