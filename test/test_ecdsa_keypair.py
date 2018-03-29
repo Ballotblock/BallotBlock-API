@@ -1,38 +1,35 @@
 #!/usr/bin/env python3
 #
-# src/test_key.py
+# test/test_crypto_suite.py
 # Authors:
 #   Samuel Vargas
 #
 
 import unittest
 from ecdsa import SigningKey, VerifyingKey, BadSignatureError
-from src.key import HexKeyPair
-import src.key as key
+from src.ecdsa_keypair import ECDSAKeyPair
 
 
 class Person:
-    def __init__(self, message: bytes, keys: HexKeyPair):
+    def __init__(self, message: bytes, keys: ECDSAKeyPair):
         self.__message = message
         self.__keys = keys
-        self.__public = key.public_hex_to_verifying_key(keys.public)
-        self.__private = key.private_hex_to_signing_key(keys.private)
 
     def get_message(self):
         return self.__message
 
     def get_public_key(self) -> VerifyingKey:
-        return self.__public
+        return self.__keys.get_public_key()
 
     def get_private_key(self) -> SigningKey:
-        return self.__private
+        return self.__keys.get_private_key()
 
 
-class KeyTest(unittest.TestCase):
+class ECDSAKeyPairTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.alice = Person(b"All your base are belong to us", key.generate_edsca_hexkeypair())
-        self.bob = Person(b"Somebody set us up the bomb", key.generate_edsca_hexkeypair())
+        self.alice = Person(b"All your base are belong to us", ECDSAKeyPair())
+        self.bob = Person(b"Somebody set us up the bomb", ECDSAKeyPair())
 
     def test_alice_verify_message(self):
         message = self.alice.get_message()

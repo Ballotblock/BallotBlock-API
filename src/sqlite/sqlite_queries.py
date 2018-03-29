@@ -8,49 +8,46 @@
 # Creation
 #
 
-#  MasterBallot and Election have a 1:1 correspondence.
-#  Ballots and MasterBallots have a Many to 1 correspondence.
-
-CREATE_MASTER_BALLOT_TABLE = """
-CREATE TABLE IF NOT EXISTS MasterBallot
-(master_ballot_title TEXT NOT NULL UNIQUE,
- questions           TEXT NOT NULL,
-                     FOREIGN KEY (master_ballot_title) REFERENCES Election(election_title)
-                     PRIMARY KEY(master_ballot_title))
-"""
-
+# List of all elections in the system.
+# private_key should only be returned to the api caller if start_date >= end_date
 CREATE_ELECTION_TABLE = """
 CREATE TABLE IF NOT EXISTS Election
-(election_title      TEXT NOT NULL UNIQUE,
- description         TEXT NOT NULL,
- start_date          INT NOT NULL,
- end_date            INT NOT NULL,
- creator_id          TEXT NOT NULL UNIQUE,
- master_ballot_title TEXT NOT NULL UNIQUE,
-                     FOREIGN KEY (master_ballot_title) REFERENCES MasterBallot(master_ballot_title)
-                     PRIMARY KEY(election_title))
+(election_title                 TEXT NOT NULL UNIQUE,
+ description                    TEXT NOT NULL,
+ start_date                     INT NOT NULL,
+ end_date                       INT NOT NULL,
+ questions                      TEXT NOT NULL,
+ creator_username               TEXT NOT NULL,
+ master_ballot_signature        TEXT NOT NULL,
+ creator_public_key             TEXT NOT NULL,
+ election_public_key            TEXT NOT NULL UNIQUE,
+ election_private_key           TEXT NOT NULL UNIQUE,
+                                PRIMARY KEY(election_title))
 """
 
-# Answers is a JSON Dump for now.
+# Records which elections a user has participated in.
+# Used to prevent a user from voting in the same election twice.
+CREATE_ELECTION_PARTICIPATION_TABLE = """
+CREATE TABLE IF NOT EXISTS ElectionParticipation
+(election_title TEXT NOT NULL UNIQUE,
+ username       TEXT NOT NULL,
+                FOREIGN KEY(election_title) REFERENCES Election(election_title)
+                PRIMARY KEY(election_title))
+"""
+
+# An individual ballot
 CREATE_BALLOT_TABLE = """
 CREATE TABLE IF NOT EXISTS Ballot
-(ballot_id           TEXT NOT NULL UNIQUE,
+(voter_id            TEXT NOT NULL UNIQUE,
  answers             TEXT NOT NULL,
- master_ballot_title TEXT NOT NULL UNIQUE,
-                     FOREIGN KEY (master_ballot_title) REFERENCES MasterBallot(master_ballot_title)
-                     PRIMARY KEY(ballot_id))
+ election_title      TEXT NOT NULL UNIQUE,
+                     FOREIGN KEY(election_title) REFERENCES Election(election_title)
+                     PRIMARY KEY(voter_id))
 """
 
 #
 # Insertion
 #
-
-INSERT_MASTER_BALLOT = """
-INSERT INTO MasterBallot (
-    master_ballot_title,
-    questions)
-VALUES(?, ?)
-"""
 
 INSERT_ELECTION = """
 INSERT INTO Election (
@@ -58,21 +55,32 @@ INSERT INTO Election (
      description,
      start_date,
      end_date,
-     creator_id,
-     master_ballot_title)
-VALUES(?, ?, ?, ?, ?, ?)
+     questions,
+     creator_username,
+     master_ballot_signature,
+     creator_public_key,
+     election_public_key,
+     election_private_key)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+INSERT_ELECTION_PARTICIPATION = """
+INSERT INTO ElectionParticipation (
+    election_title,
+    username)
+VALUES(?, ?)
 """
 
 INSERT_BALLOT = """
 INSERT INTO Ballot (
-     ballot_id,
+     voter_id,
      answers,
-     master_ballot_title)
+     election_title)
 VALUES(?, ?, ?)
 """
 
 #
-# Searching
+# Searching / Retrieval
 #
 
 SELECT_ELECTION_BY_TITLE = """
@@ -80,12 +88,12 @@ SELECT * from Election WHERE
     election_title = (?)
 """
 
-SELECT_MASTER_BALLOT_BY_TITLE = """
-SELECT * from MasterBallot WHERE
-    master_ballot_title = (?)
-"""
-
 SELECT_BALLOT_BY_ID = """
 SELECT * from Ballot WHERE
-    ballot_id = (?)
+    voter_id = (?)
+"""
+
+SELECT_ELECTION_PARTICIPATION_BY_USERNAME = """
+SELECT * from ElectionParticipation WHERE
+    username = (?)
 """

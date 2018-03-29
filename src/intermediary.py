@@ -26,52 +26,64 @@ for subdirectory in SUBDIRECTORIES:
 #     Samuel Vargas
 #     Alex Gao
 
-from flask import Flask, request, jsonify
-from src import app
-from src.backend_type import BackendType
+from flask import Flask, request, jsonify, session
 from src import httpcode
 from src.validator import ElectionJsonValidator
+<<<<<<< HEAD
 from src.users import Voter
 from src.sessions import MemorySessionProvider
+=======
+from src.sessions import SessionManager
+>>>>>>> refs/remotes/origin/master
 from src.registration import RegistrationServerProvider
-from src.sqlite import SQLiteBackendIO
+from src.interfaces import BackendIO
+from src import required_keys
+from src.ecdsa_keypair import ECDSAKeyPair
+import json
+import uuid
+import time
+
+app = Flask(__name__)
 
 URL = "0.0.0.0"
 DEBUG_URL = "127.0.0.1"
 NAME = "BallotBlock API"
 PORT = 8080
-BACKEND_TYPE = None
 
-# Initializer
-BACKEND_INITIALIZER = None
-
-# Providers
+# Modules
 BACKEND_IO = None
-SESSION_PROVIDER = MemorySessionProvider()
+SESSION_MANAGER = SessionManager()
 REGISTRATION_PROVIDER = RegistrationServerProvider()
-
-# Validators
 ELECTION_JSON_VALIDATOR = ElectionJsonValidator()
 
+app.config['SECRET_KEY'] = str(uuid.uuid4())
+app.config['PROPAGATE_EXCEPTIONS'] = True
+app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
 
-# TODO: Allow devs to pass in the PROVIDERS / INITAILIZERS so they can stub them out.
-def start_test_sqlite(db_path: str):
+
+def start_test_sqlite(backend_io: BackendIO = None,
+                      registration_provider=RegistrationServerProvider(),
+                      election_json_validator=ElectionJsonValidator()
+                      ):
+    if backend_io is None:
+        raise ValueError("backend_io can't be none")
+
     global BACKEND_IO
-    global BACKEND_INITIALIZER
-    global BACKEND_TYPE
+    global REGISTRATION_PROVIDER
+    global ELECTION_JSON_VALIDATOR
 
-    BACKEND_IO = SQLiteBackendIO(db_path)
-    BACKEND_INITIALIZER = None
-    BACKEND_TYPE = BackendType['SQLite']
+    BACKEND_IO = backend_io
+    REGISTRATION_PROVIDER = registration_provider
+    ELECTION_JSON_VALIDATOR = election_json_validator
+
     test_app = app.test_client()
     test_app.testing = True
     return test_app
 
 
-@app.route("/")
-def index():
-    return "BallotBlock API"
-
+#
+# Login
+#
 
 @app.route("/api/login", methods=["GET", "POST"])
 def login() -> httpcode.HttpCode:
@@ -80,22 +92,21 @@ def login() -> httpcode.HttpCode:
     if content is None:
         return httpcode.MISSING_OR_MALFORMED_JSON
 
-    # At least one required parameter is missing
-    required_keys = ("username", "password", "account_type")
-    key_is_missing = all(key not in content.keys() for key in required_keys)
-    if key_is_missing:
-        return httpcode.MISSING_LOGIN_PARAMETERS
+    # At least one required login parameter is missing
+    for key in content:
+        if key not in required_keys.REQUIRED_LOGIN_KEYS:
+            return httpcode.MISSING_LOGIN_PARAMETERS
 
     # The registration server says this user is invalid:
     if not REGISTRATION_PROVIDER.is_user_registered(content['username'], content['password']):
         return httpcode.USER_NOT_REGISTERED
 
     # The user is already authenticated
-    if SESSION_PROVIDER.is_authenticated(content['username']):
+    if SESSION_MANAGER.is_logged_in(session):
         return httpcode.USER_ALREADY_AUTHENTICATED
 
-    # All tests passed, authenticate the user.
-    SESSION_PROVIDER.authenticate_user(content['username'])
+    # The user is not already authenticated, authenticate them and return OK
+    SESSION_MANAGER.login(content['username'], content["account_type"], session)
     return httpcode.LOGIN_SUCCESSFUL
 
 
@@ -113,30 +124,59 @@ def election_create() -> httpcode.HttpCode:
     about the expected json election format.
     """
 
+    # Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
+
+    # Check if a voter is logged in, report an error if they are
+    if SESSION_MANAGER.voter_is_logged_in(session):
+        return httpcode.VOTER_CANNOT_CREATE_ELECTION
+
     # Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
     if content is None:
         return httpcode.MISSING_OR_MALFORMED_JSON
 
-    # Verify the user has logged in first
-    if not SESSION_PROVIDER.is_authenticated(content['username']):
-        return httpcode.LOG_IN_FIRST
+    # Verify that master_ballot, public_key, and signature are present
+    for key in required_keys.REQUIRED_ELECTION_KEYS:
+        if key not in content:
+            return httpcode.ELECTION_MISSING_BALLOT_PUBLIC_KEY_OR_SIGNATURE
 
-    # Ensure election JSON is valid
-    valid, reason = ELECTION_JSON_VALIDATOR.is_valid(content)
+    # Verify that master_ballot is a valid JSON string
+    try:
+        master_ballot = json.loads(content['master_ballot'])
+    except ValueError:
+        return httpcode.ELECTION_BALLOT_JSON_MALFORMED
+
+    # Verify that master_ballot contains all the required keys
+    for key in required_keys.REQUIRED_ELECTION_MASTER_BALLOT_KEYS:
+        if key not in master_ballot:
+            return httpcode.ELECTION_BALLOT_MISSING_TITLE_DESCRIPTION_DATE_OR_QUESTIONS
+
+    # TODO: Verify that the master_ballot itself contains valid data only!
+    valid, reason = ELECTION_JSON_VALIDATOR.is_valid(master_ballot)
     if not valid:
         return reason
 
-    # Disallow the creation of an election if an election with this title already exists
-    if BACKEND_IO.find_election_by_title(content['title']) is not None:
+    # Verify an election with this name does not already exist
+    if BACKEND_IO.get_election_by_title(master_ballot["election_title"]) is not None:
         return httpcode.ELECTION_WITH_TITLE_ALREADY_EXISTS
 
-    # Create an election, report an error if there was an error creating the election
-    BACKEND_IO.create_election(content)
+    # Verify that we can decrypt the "signature" using "ballot" + "public_key"
+    if not ECDSAKeyPair.is_data_signed(content['creator_public_key'],
+                                       content['master_ballot_signature'],
+                                       content['master_ballot']):
+        return httpcode.ELECTION_BALLOT_SIGNING_MISMATCH
 
-    return httpcode.ELECTION_CREATED_SUCCESSFULLY
+    # Generate a public private key pair, used to encrypt voter ballots.
+    election_keys = ECDSAKeyPair()
 
+    # Create the election using the specified:
+    #   [*] master_ballot,
+    #   [*] creator signature + public key,
+    #   [*] per election public private key
 
+<<<<<<< HEAD
 @app.route("/api/election/current", methods=["GET"])
 def current_election_list():
     """
@@ -204,8 +244,33 @@ def election_join():
     then participate in the election
     """
     raise NotImplementedError()
+=======
+    master_ballot['questions'] = json.dumps(master_ballot['questions'])
+
+    BACKEND_IO.create_election(
+        master_ballot,
+        creator_username=SESSION_MANAGER.get_username(session),
+        creator_master_ballot_signature=content['master_ballot_signature'],
+        creator_public_key_hex=content['creator_public_key'],
+        election_public_key_hex=election_keys.get_public_key_hex_str(),
+        election_private_key_hex=election_keys.get_private_key_hex_str()
+    )
+
+    return httpcode.ELECTION_CREATED_SUCCESSFULLY
 
 
+# TODO: This is an EXACT search method, the title has to be the same
+#       or the search will fail. Modify it to be an actual search function that
+#       returns a list of potential elections
+>>>>>>> refs/remotes/origin/master
+
+@app.route("/api/election/get_by_title", methods=["GET"])
+def election_get_by_title():
+    # Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
+
+<<<<<<< HEAD
 @app.route("/api/ballot/<id>", methods=["GET"])
 def election_get_ballot_schema(id):
     """
@@ -217,8 +282,19 @@ def election_get_ballot_schema(id):
     json = user.get_ballot(electionId)
     return jsonify(json), 200
 
+=======
+    # Check if any JSON was supplied at all
+    content = request.get_json(silent=True, force=True)
+    if content is None:
+        return httpcode.MISSING_OR_MALFORMED_JSON
+>>>>>>> refs/remotes/origin/master
 
+    # Verify election_key is present
+    for key in required_keys.REQUIRED_ELECTION_SEARCH_BY_TITLE_KEYS:
+        if key not in content:
+            return httpcode.ELECTION_SEARCH_BY_TITLE_MISSING_ELECTION_TITLE
 
+<<<<<<< HEAD
 @app.route("/api/vote", methods=["POST"])
 def election_vote():
     """
@@ -242,3 +318,15 @@ def election_vote():
     json = user.vote(content['election'],content['answers'])
     
     return jsonify(json)
+=======
+    # Check if the election was found.
+    result = BACKEND_IO.get_election_by_title(content["election_title"])
+    if result is None:
+        return httpcode.ELECTION_NOT_FOUND
+
+    # Remove the private_key if the election hasn't ended yet.
+    if int(time.time()) < result['end_date']:
+        result.pop('election_private_key')
+
+    return jsonify(result), 200
+>>>>>>> refs/remotes/origin/master

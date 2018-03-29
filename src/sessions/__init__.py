@@ -1,1 +1,1 @@
-from .memory_session_provider import MemorySessionProvider
+from .session_manager import SessionManager
