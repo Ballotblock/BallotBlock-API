@@ -36,3 +36,19 @@ class CryptoFlow:
             "election_private_key": rsa.get_private_key_as_pkcs1_b64().decode('utf-8'),
             "election_encrypted_fernet_key": encrypted_fernet_key.decode('utf-8'),
         }
+
+    @staticmethod
+    def encrypt_vote_with_election_creator_rsa_keys_and_encrypted_fernet_key(
+            ballot_str: str = None,
+            rsa_public_key_b64: str = None,
+            rsa_private_key_b64: str = None,
+            encrypted_fernet_key: str = None):
+        election_rsa = RSAKeyPair(
+            use_public_pkcs1_b64_key=rsa_public_key_b64,
+            use_private_pkcs1_b64_key=rsa_private_key_b64
+        )
+
+        # Decrypt the fernet symmetric key
+        decrypted_fernet_key = election_rsa.decrypt_b64_to_bytes(encrypted_fernet_key.encode('utf-8'))
+        fernet_crypt = FernetCrypt(use_fernet_key_bytes=decrypted_fernet_key)
+        return fernet_crypt.encrypt_to_b64(ballot_str.encode('utf-8')).decode('utf-8')
