@@ -357,23 +357,16 @@ def election_cast_vote():
     ):
         return httpcode.ELECTION_BALLOT_SIGNING_MISMATCH
 
-    # Fetch the RSA Key from the ballot's corresponding election
-    election_rsa = RSAKeyPair(
-        use_public_pkcs1_b64_key=election["election_public_key"],
-        use_private_pkcs1_b64_key=election["election_private_key"]
+    # Decrypt the encrypted Fernet key and then encrypt the user's ballot with the Fernet key
+    encrypted_ballot = CryptoFlow.encrypt_vote_with_election_creator_rsa_keys_and_encrypted_fernet_key(
+        ballot_str = content['ballot'],
+        rsa_private_key_b64=election["election_private_key"],
+        rsa_public_key_b64=election["election_public_key"],
+        encrypted_fernet_key=election["election_encrypted_fernet_key"]
     )
 
-    # Decrypt the fernet symmetric key
-    decrypted_fernet_key = election_rsa.decrypt_b64_to_bytes(election["election_encrypted_fernet_key"])
-    fernet_crypt = FernetCrypt(
-        use_fernet_key_bytes=decrypted_fernet_key
-    )
-
-    # Encrypt the user's ballot using our decrypted symmetric fernet key
-    encrypted_ballot = fernet_crypt.encrypt_to_b64(content["ballot"].encode('utf-8')).decode('utf-8')
-
+    # Generate a per election voter UUID so the user can retrieve this ballot again.
     voter_uuid = str(uuid.uuid4())
-
     BACKEND_IO.create_ballot(
         encrypted_ballot,
         election_title = election['election_title'],
