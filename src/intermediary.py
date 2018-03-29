@@ -34,7 +34,7 @@ from src.registration import RegistrationServerProvider
 from src.interfaces import BackendIO
 from src import required_keys
 from src.crypto_suite import ECDSAKeyPair, FernetCrypt, RSAKeyPair
-from src.crypto_flow import verify_data_is_signed_ecdsa
+from src.crypto_flow import CryptoFlow, verify_data_is_signed_ecdsa
 from src.time_manager import TimeManager
 import json
 import uuid
@@ -181,19 +181,16 @@ def election_create() -> httpcode.HttpCode:
     # 3) Encrypt the random symmetric key using the RSAKeyPair (public key)
     # 4) Stick the private key, public key, and encrypted fernet key into the database
 
-    election_rsa = RSAKeyPair()
-    election_fernet = FernetCrypt()
-    election_encrypted_fernet_key = election_rsa.encrypt_message_as_b64(election_fernet.get_key_as_bytes())
-
+    election_crypto = CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict()
     master_ballot['questions'] = json.dumps(master_ballot['questions'])
     BACKEND_IO.create_election(
         master_ballot,
         creator_username=SESSION_MANAGER.get_username(session),
         creator_master_ballot_signature=content['master_ballot_signature'],
         creator_public_key_b64=content['creator_public_key'],
-        election_private_rsa_key=election_rsa.get_private_key_as_pkcs1_b64().decode('utf-8'),
-        election_public_rsa_key=election_rsa.get_public_key_as_pkcs1_b64().decode('utf-8'),
-        election_encrypted_fernet_key=election_encrypted_fernet_key.decode('utf-8')
+        election_private_rsa_key=election_crypto['election_private_key'],
+        election_public_rsa_key=election_crypto['election_public_key'],
+        election_encrypted_fernet_key=election_crypto['election_encrypted_fernet_key']
     )
 
     return httpcode.ELECTION_CREATED_SUCCESSFULLY
@@ -276,8 +273,8 @@ def election_cast_vote():
 
     # Fetch the RSA Key from the ballot's corresponding election
     election_rsa = RSAKeyPair(
-        use_public_pkcs1_b64_key=election["election_public_key"].decode('utf-8'),
-        use_private_pkcs1_b64_key=election["election_private_key"].decode('utf-8')
+        use_public_pkcs1_b64_key=election["election_public_key"],
+        use_private_pkcs1_b64_key=election["election_private_key"]
     )
 
     # Decrypt the fernet symmetric key
