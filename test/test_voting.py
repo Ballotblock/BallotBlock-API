@@ -14,6 +14,7 @@ from src.registration import RegistrationServerProvider
 from src.sqlite import SQLiteBackendIO
 from src.sessions.session_manager import SessionManager
 from src.crypto_flow import CryptoFlow
+from src.time_manager import TimeManager
 from src.httpcode import *
 import json
 import src.intermediary
@@ -30,6 +31,7 @@ class VotingTest(unittest.TestCase):
         self.registration_provider = RegistrationServerProvider()
         self.election_json_validator = ElectionJsonValidator()
         self.session_manager = SessionManager()
+        self.time_manager = TimeManager()
         self.election_json_validator.is_valid = MagicMock(return_value=(True, ""))
         self.registration_provider.is_user_registered = MagicMock(return_value=True)
         self.session_manager.is_logged_in = MagicMock(return_value=True)
@@ -53,7 +55,8 @@ class VotingTest(unittest.TestCase):
             backend_io=SQLiteBackendIO(":memory:"),
             session_manager=self.session_manager,
             election_json_validator=self.election_json_validator,
-            registration_provider=self.registration_provider
+            registration_provider=self.registration_provider,
+            time_manager=self.time_manager
         )
 
         # Create an election as an election creator
@@ -79,46 +82,57 @@ class VotingTest(unittest.TestCase):
         self.session_manager.voter_is_logged_in = MagicMock(return_value=True)
         self.session_manager.get_username = MagicMock(return_value="Test Voter")
 
-    def test_voter_can_vote_in_election_once(self):
-        # Cast a vote as a voter
-        voter_ecdsa_keys = ECDSAKeyPair()
-        ballot = generate_voter_post_data(
+        # Cast a single vote as a voter
+        self.voter_ecdsa_keys = ECDSAKeyPair()
+        self.ballot = generate_voter_post_data(
             election_title=self.election_title,
-            voter_keys=voter_ecdsa_keys,
+            voter_keys=self.voter_ecdsa_keys,
             answers=["Red"]
         )
 
         # Verify that the vote was cast
-        response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(ballot))
-        assert response.status_code == 201
-        try:
-            uuid.UUID(response.data.decode('utf-8'), version=4)
-        except ValueError:
-            self.fail("The server should have returned a uuid4!")
+        response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(self.ballot))
+        # Will throw and fail test iff server did not return a uuid
+        self.voter_uuid = response.data.decode('utf-8')
+        uuid.UUID(self.voter_uuid, version=4)
 
-        # Disallow a user from voting twice in the same election. The username is used to detect this.
-        response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(ballot))
+    def test_voter_can_vote_in_election_once(self):
+        # Disallow a user from voting twice in the same election.
+        # The logged in username is used to detect this.
+        response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(self.ballot))
         assert ELECTION_VOTER_VOTED_ALREADY.message == response.data.decode('utf-8')
 
     def test_voter_can_retrieve_their_ballot_with_returned_voter_uuid(self):
-        # Cast a vote as a voter
-        voter_ecdsa_keys = ECDSAKeyPair()
-        ballot = generate_voter_post_data(
-            election_title=self.election_title,
-            voter_keys=voter_ecdsa_keys,
-            answers=["Red"]
-        )
-
-        # Verify that the vote was cast
-        response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(ballot))
-        voter_uuid = response.data.decode('utf-8')
-
-        uuid.UUID(voter_uuid, version=4) # Will throw if the server didn't throw a uuid4
-
         # Verify that the correct data is retrieved from the backend.
-        data = json.dumps({'voter_uuid': voter_uuid})
+        data = json.dumps({'voter_uuid': self.voter_uuid})
         response = self.app.post("/api/ballot/get", headers=JSON_HEADERS, data=data)
         retrieved_ballot = json.loads(response.data)
 
         assert retrieved_ballot["election_title"] == self.election_title
-        assert retrieved_ballot["voter_uuid"] == voter_uuid
+        assert retrieved_ballot["voter_uuid"] == self.voter_uuid
+
+    def test_voter_can_verify_ecdsa_signature_during_election(self):
+        self.time_manager.election_in_progress = MagicMock(return_value=True)
+        data = json.dumps({'voter_uuid': self.voter_uuid})
+        response = self.app.post("/api/ballot/get", headers=JSON_HEADERS, data=data)
+        ballot_signature = json.loads(response.data)['ballot_signature']
+        assert self.voter_ecdsa_keys.is_signed(ballot_signature.encode('utf-8'), self.ballot['ballot'].encode('utf-8'))
+
+    def test_voter_cannot_see_decrypted_ballot_during_election(self):
+        # Mock the test so that the election is still in progress
+        self.time_manager.election_in_progress = MagicMock(return_value=True)
+        # Verify that the ballot data is encrypted (not identical) to the submitted ballot data
+        data = json.dumps({'voter_uuid': self.voter_uuid})
+        response = self.app.post("/api/ballot/get", headers=JSON_HEADERS, data=data)
+        retrieved_ballot = json.loads(response.data)
+        assert retrieved_ballot['ballot'] != self.ballot['ballot']
+
+    def test_voter_can_retrieve_decrypted_ballot_when_election_is_over(self):
+        # Mock the test so that it's over!
+        self.time_manager.election_in_progress = MagicMock(return_value=False)
+
+        # Verify that the ballot data is decrypted (identical) to the submitted ballot data
+        data = json.dumps({'voter_uuid': self.voter_uuid})
+        response = self.app.post("/api/ballot/get", headers=JSON_HEADERS, data=data)
+        retrieved_ballot = json.loads(response.data)
+        assert retrieved_ballot['ballot'] == self.ballot['ballot']
