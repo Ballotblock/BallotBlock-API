@@ -319,5 +319,18 @@ def get_voter_ballot_by_voter_uuid():
     if result is None:
         return "Could not find a voter_ballot with this uuid", 404
 
+    # Get the corresponding election
+    election = BACKEND_IO.get_election_by_title(result['election_title'])
+
+    # If the election has ended, decrypt the users ballot and return
+    # that instead.
+    if not TIME_MANAGER.election_in_progress(election['end_date']):
+        result['ballot'] = CryptoFlow.decrypt_ballot(
+            encrypted_ballot_str=result['ballot'],
+            election_rsa_public_key_b64=election['election_public_key'],
+            election_rsa_private_key_b64=election['election_private_key'],
+            election_encrypted_fernet_key_b64=election['election_encrypted_fernet_key'],
+        )
+
     # Return the found content
     return jsonify(result), 200
