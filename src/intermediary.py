@@ -33,8 +33,7 @@ from src.sessions import SessionManager
 from src.registration import RegistrationServerProvider
 from src.interfaces import BackendIO
 from src import required_keys
-from src.crypto_suite import ECDSAKeyPair, FernetCrypt, RSAKeyPair
-from src.crypto_flow import CryptoFlow, verify_data_is_signed_ecdsa
+from src.crypto_flow import CryptoFlow
 from src.time_manager import TimeManager
 import json
 import uuid
@@ -168,7 +167,7 @@ def election_create() -> httpcode.HttpCode:
 
     # Verify that the election creator correctly signed their 'master_ballot_signature' using
     # their 'creator_public_key'
-    if not verify_data_is_signed_ecdsa(
+    if not CryptoFlow.verify_data_is_signed_ecdsa(
             content['master_ballot'],
             content['master_ballot_signature'],
             content['creator_public_key']
@@ -270,7 +269,7 @@ def election_cast_vote():
     # TODO: Verify that the election hasn't ended already
 
     # Verify that the user signed their ballot data correctly
-    if not verify_data_is_signed_ecdsa(
+    if not CryptoFlow.verify_data_is_signed_ecdsa(
             content['ballot'],
             content['ballot_signature'],
             content['voter_public_key']

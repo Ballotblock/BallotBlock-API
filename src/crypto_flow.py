@@ -11,17 +11,6 @@ from typing import Dict
 from src.crypto_suite import ECDSAKeyPair, RSAKeyPair, FernetCrypt, ECDSA_CURVE
 
 
-def verify_data_is_signed_ecdsa(
-        data: bytes = None,
-        string_signature_b64: bytes = None,
-        user_public_key_ecdsa_b64: bytes = None) -> bool:
-    public_key = VerifyingKey.from_string(base64.b64decode(user_public_key_ecdsa_b64), curve=ECDSA_CURVE)
-    try:
-        public_key.verify(base64.b64decode(string_signature_b64), data.encode('utf-8'))
-    except BadSignatureError:
-        return False
-
-    return True
 
 
 class CryptoFlow:
@@ -52,3 +41,16 @@ class CryptoFlow:
         decrypted_fernet_key = election_rsa.decrypt_b64_to_bytes(encrypted_fernet_key.encode('utf-8'))
         fernet_crypt = FernetCrypt(use_fernet_key_bytes=decrypted_fernet_key)
         return fernet_crypt.encrypt_to_b64(ballot_str.encode('utf-8')).decode('utf-8')
+
+    @staticmethod
+    def verify_data_is_signed_ecdsa(
+            data: bytes = None,
+            string_signature_b64: bytes = None,
+            user_public_key_ecdsa_b64: bytes = None) -> bool:
+        public_key = VerifyingKey.from_string(base64.b64decode(user_public_key_ecdsa_b64), curve=ECDSA_CURVE)
+        try:
+            public_key.verify(base64.b64decode(string_signature_b64), data.encode('utf-8'))
+        except BadSignatureError:
+            return False
+
+        return True
