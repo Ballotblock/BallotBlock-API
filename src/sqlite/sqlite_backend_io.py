@@ -85,6 +85,7 @@ class SQLiteBackendIO(BackendIO):
         self.cursor.execute(INSERT_BALLOT, (
             voter_uuid,
             ballot,
+            ballot_signature,
             election_title,
         ))
 
@@ -121,7 +122,8 @@ class SQLiteBackendIO(BackendIO):
         return {
             "voter_uuid": result[0],
             "ballot": result[1],
-            "election_title": result[2]
+            "ballot_signature": result[2],
+            "election_title": result[3]
         }
 
     def register_user_as_participated_in_election(self, username: str, election_title: str):
