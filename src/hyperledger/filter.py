@@ -3,13 +3,11 @@
 # Authors:
 #     Alex Gao
 #
-
-
 import datetime
 import json
 
 # this class is for generating filters to use in querying data through Hyperledger Composer REST API
-# this follows LoopBack syntax
+# this follows LoopBack filter syntax
 class Filter() :
 
     def current_filter():

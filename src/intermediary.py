@@ -186,8 +186,6 @@ def election_create() -> httpcode.HttpCode:
     # 3) Encrypt the random symmetric key using the RSAKeyPair (public key)
     # 4) Stick the private key, public key, and encrypted fernet key into the database
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 @app.route("/api/election/current", methods=["GET"])
 def current_election_list():
     """
@@ -245,94 +243,26 @@ def election_get(id):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response;
 
-
-# Note : we might not need this at all
-@app.route("/api/ballot", methods=["POST"])
-def election_join():
-    """
-    Allows the user to enter an election.
-    When the user creates a ballot by doing a post request, a user can
-    then participate in the election
-    """
-    raise NotImplementedError()
-=======
-=======
-    election_crypto = CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict()
->>>>>>> refs/remotes/origin/master
-    master_ballot['questions'] = json.dumps(master_ballot['questions'])
-    BACKEND_IO.create_election(
-        master_ballot,
-        creator_username=SESSION_MANAGER.get_username(session),
-        creator_master_ballot_signature=content['master_ballot_signature'],
-        creator_public_key_b64=content['creator_public_key'],
-        election_private_rsa_key=election_crypto['election_private_key'],
-        election_public_rsa_key=election_crypto['election_public_key'],
-        election_encrypted_fernet_key=election_crypto['election_encrypted_fernet_key']
-    )
-
-    return httpcode.ELECTION_CREATED_SUCCESSFULLY
-
-
 # TODO: This is an EXACT search method, the title has to be the same
 #       or the search will fail. Modify it to be an actual search function that
 #       returns a list of potential elections
->>>>>>> refs/remotes/origin/master
 
 @app.route("/api/election/get_by_title", methods=["GET"])
 def election_get_by_title():
-    # Check if anyone is logged in
+   # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
         return httpcode.LOG_IN_FIRST
 
-<<<<<<< HEAD
-@app.route("/api/ballot/<id>", methods=["GET"])
-def election_get_ballot_schema(id):
-    """
-    Returns a 'ballot' json object containing several propositions
-    """
-    electionId = id;
-    userId = request.args.get('id')
-    user = Voter(userId)
-    json = user.get_ballot(electionId)
-    return jsonify(json), 200
-
-=======
     # Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
     if content is None:
         return httpcode.MISSING_OR_MALFORMED_JSON
->>>>>>> refs/remotes/origin/master
 
     # Verify election_key is present
     for key in required_keys.REQUIRED_ELECTION_SEARCH_BY_TITLE_KEYS:
         if key not in content:
             return httpcode.ELECTION_SEARCH_BY_TITLE_MISSING_ELECTION_TITLE
 
-<<<<<<< HEAD
-@app.route("/api/vote", methods=["POST"])
-def election_vote():
-    """
-    Allows the user to cast a vote (sending the contents
-    of their filled out ballot.
-    If their ballot is missing or contains invalid data return
-    an error. Otherwise accept their ballot and store it
-    on the backend.
-    Users may only cast their vote ONCE. Election creators
-    may not cast votes. Only create elections.
-
-    accepts a post request in the following format
-    {
-        "election" : "some election"
-        "answers" : [1,2,3,4]
-    }
-    """
-    content = request.get_json(silent=True, force=True)
-    userId = request.args.get('id')
-    user = Voter(userId)
-    json = user.vote(content['election'],content['answers'])
-    
-    return jsonify(json)
-=======
     # Check if the election was found.
     result = BACKEND_IO.get_election_by_title(content["election_title"])
     if result is None:
@@ -343,12 +273,42 @@ def election_vote():
         result.pop('election_private_key')
 
     return jsonify(result), 200
-<<<<<<< HEAD
->>>>>>> refs/remotes/origin/master
-=======
 
 
-@app.route("/api/election/vote", methods=["GET", "POST"])
+@app.route("/api/vote", methods=["POST"])
+def election_vote():
+    """
+    Allows the user to cast a vote (sending the contents
+    of their filled out ballot.
+    accepts a post request in the following format
+    {
+        "election" : "some election"
+        "answers" : [1,2,3,4]
+    }
+    """
+    #-----------------------------------------------------------------> Old code below
+    # content = request.get_json(silent=True, force=True)
+    # userId = request.args.get('id')
+    # user = Voter(userId)
+    # json = user.vote(content['election'],content['answers'])
+    #------------------------------------------------------------------
+    
+    # return jsonify(json)
+
+    # Check if the election was found.
+    # result = BACKEND_IO.get_election_by_title(content["election_title"])
+    # if result is None:
+    #     return httpcode.ELECTION_NOT_FOUND
+
+    # # Remove the private_key if the election hasn't ended yet.
+    # if TIME_MANAGER.election_in_progress(result['end_date']):
+    #     result.pop('election_private_key')
+
+    # return jsonify(result), 200
+
+
+
+@app.route("/api/signed_vote", methods=["POST"])
 def election_cast_vote():
     # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
@@ -449,4 +409,39 @@ def get_voter_ballot_by_voter_uuid():
 
     # Return the found content
     return jsonify(result), 200
->>>>>>> refs/remotes/origin/master
+
+
+
+@app.route("/api/election/current", methods=["GET"])
+def current_election_list():
+    """
+    Returns a list of all the current elections
+    """
+    id = request.args.get('id')
+    user = Voter(id);
+    json = user.get_current_elections();
+    response = jsonify(json);
+    # response.headers.add('Access-Control-Allow-Origin', '*')
+    return response;
+
+@app.route("/api/election/past", methods=["GET"])
+def past_election_list():
+    """
+    Returns a list of all the current elections
+    """
+
+    id = request.args.get('id')
+    user = Voter(id);
+    json = user.get_past_elections();
+    return jsonify(json);
+
+@app.route("/api/election/upcomming", methods=["GET"])
+def upcomming_election_list():
+    """
+    Returns a list of all the current elections
+    """
+    id = request.args.get('id')
+    user = Voter(id);
+    json = user.get_upcomming_elections();
+    return jsonify(json);
+
