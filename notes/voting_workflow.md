@@ -32,7 +32,7 @@ request with the following format:
         "election_title": "Favorite Color and Shape Election",
         "start_date": 1521507388,
         "end_date": 1522371388,
-        "question":
+        "questions":
          [
             ["Favorite Color?", ["Red", "Blue"]],
             ["Favorite Shape?", ["Square", "Triangle"]]
@@ -44,6 +44,10 @@ request with the following format:
 ```
 
 * ``master_ballot`` should be a JSON object in string (UTF-8) format.
+    * ``description`` should be a UTF-8 string explaining the purpose of the election.
+    * ``start_date`` should be a unix timestamp in seconds indicating the start date of the election.
+    * ``end_date`` should be a unix timestamp in seconds indicating the end date of the election.
+    * ``questions`` should be a array of arrays. The first value should be the question, the second value should be an array of expected answers. (TODO: Consider changing this so that the key is the question and the value is an array of allowed answers)
 * ``creator_public_key`` key should be a **ecdsa.SECP256k1** public key in **base64** format.
 * ``master_ballot_signature`` should be the ``master_ballot`` string but signed using the ``creator_public_key``'s corresponding private key.
 
@@ -54,15 +58,17 @@ The server will subsequently:
 1. Verify that the title, description, start_date, and end_date are all valid.
 2. Verify that the provided questions are all valid (no empty strings etc).
 3. Verify that ``master_ballot`` was signed using ``master_ballot_signature`` and ``creator_public_key``
-4. Generate ``election_public_key`` and ``election_private_key``
-5. Store the JSON sent from the client, ``election_public_key``, and ``election_private_key`` into the active BackendIO
+4. Generate ``election_public_key`` and ``election_private_key``, these are **RSA-2048** keys 
+5. Generate a random **Fernet** symmetric encryption key.
+6. Encrypt the random Fernet symmetric key with ``election_public_key``,
+7. Insert ``master_ballot``, ``creator_public_key``, ``master_ballot_signature``, ``election_public_key``, ``election_private_key``, and ``election_encrypted_fernet_key`` into the active **BackendIO** object
+8. Return ``httpcode.ELECTION_CREATED_SUCCESSFULLY`` to indicate that the election was successfully created.
 
-Whenever a user casts a vote in an election, their vote will be encrypted using the ``election_public_key`` that corresponds to the created election.
+When a user casts a vote in the election, their vote is encrypted using the randomly generated Fernet symmetric encryption key. It's stored in the ballot encrypted.
 
 Anyone can download the ``election_public_key`` throughout the length of the election, but the ``election_private_key`` will remain secret until the server system time is past the ``end_date`` specified in the posted election creation JSON.
 
-This allows us to have secret ballots that are revealed at the conclusion of the
-election.
+The Server uses the ``TimeManager`` class to determine if the ``election_private_key`` should be included or removed from ``GET`` requests to the API.
 
 Current details:
 * Election creators are not allowed to retroactively modify elections.
@@ -87,6 +93,8 @@ When a user wants to vote, they must send a JSON POST request with the following
 ```
 
 * ``ballot`` should be a JSON object in string format. It should contain the ``election_title`` and an array of ``answers`` that directly correspond to the ``questions`` in the specified election.
+  * ``election_title`` should be the title of the election in UTF-8 format.
+  * ``answers`` should be an array that directly corresponds to ``questions`` in the election
 * ``voter_public_key`` should be a **ecdsa.SECP256k1** public key in **base64** format.
 * ``ballot_signature`` should be the ``ballot`` json object in string format but signed using ``voter_public_key``'s corresponding private key.
 
@@ -97,10 +105,13 @@ The server will then:
 2. Verify that this election exists
 3. Verify that the actively logged in user hasn't participated in this election already.
 4. Verify that all the answers are valid choices for the given election.
-5. Generate a ``voter_uuid`` and return that to the user.
-6. Encrypt this ballot using the election's ``election_private_key``
-7. Insert the ``voter_uuid`` into the ballot data and insert it into the BackendIO
-8. Return the ``voter_uuid`` so the user can validate that the data was stored and **untampered with**.
+5. Decrypt the ``election_fernet_key_encrypted`` that corresponds to this election.
+6. Use the decrypted fernet key to encrypt the user's ballot.
+7. Encrypt this ballot using the election's ``election_private_key``
+8. Generate a ``voter_uuid``
+9. Insert the ``voter_uuid``+ all ballot data into the active BackendIO
+10. Return the ``voter_uuid`` to the user so they can retrieve it again later.
+
 
 Ballot Details:
 * The ``voter_uuid`` is returned to the user to avoid tying them directly to a specific user.
