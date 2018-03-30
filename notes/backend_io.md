@@ -7,7 +7,7 @@ Clients send HTTP ``GET`` and ``POST`` requests to the server (along with accomp
 
 When it comes to actually storing that data, BallotBlock utilizes a backend agnostic approach by providing a ``BackendIO`` interface in ``src/interfaces/backend_io.py``
 
-If a user wanted to deploy ``BallotBlock`` to hold elections in their organization, but they wanted to store all voting data using ``MonogDB``, then they could create a ``MongoDBBackendIO`` that implemented the ``BackendIO`` interface.
+If a user wanted to deploy ``BallotBlock`` to hold elections in their organization, but they wanted to store all voting data using ``MongoDB``, then they could create a ``MongoDBBackendIO`` that implemented the ``BackendIO`` interface.
 
 In ``intermediary.py`` they just have to set the ``BACKEND_IO`` variable equal to a new instance of their class and the rest of the system will automatically work and correctly store data on their preferred backend (provided the interface is implemented correctly).
 
@@ -36,11 +36,11 @@ to implement all the required methods:
 | Ballot                 |A list of ballots and their encrypted answers. Random uuid's are used to link a voter to a ballot.|
 
 The relationships between the tables are defined as follows:
-* The ``Election`` table has no constraints or foriegn keys.
+* The ``Election`` table has no constraints or foreign keys.
 * In the ``ElectionParticipation`` table, each record should have a 1:1 correspondance with a specific Election (but not a specific Ballot!)
 * In the ``Ballot`` table, each record should have a 1:1 correspondance with a specific Election.
 
-The reference ``SQLite3`` implementation uses ``FOREIGN KEY``'s and ``UNIQUE`` constraints as a sanity check but the ``BallotBlock`` API will maintain this referential integrity for you by calling the appropriate actions prior to storing anything on the actively used ``BackendIO``.
+The reference ``SQLite3`` implementation uses ``FOREIGN KEY``'s and ``UNIQUE`` constraints as a sanity check but the ``BallotBlock`` API will maintain this referential integrity for you by calling the appropriate methods prior to storing anything on the actively used ``BackendIO``.
 
 # General details
 * All keys passed into the ``BackendIO`` methods are strings.
