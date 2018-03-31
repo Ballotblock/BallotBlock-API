@@ -186,62 +186,34 @@ def election_create() -> httpcode.HttpCode:
     # 3) Encrypt the random symmetric key using the RSAKeyPair (public key)
     # 4) Stick the private key, public key, and encrypted fernet key into the database
 
+
+@app.route("/api/election/<id>", methods=["GET"])
+def election_get(id):
+    """
+    """
+    raise NotImplementedError
+
 @app.route("/api/election/current", methods=["GET"])
 def current_election_list():
     """
     Returns a list of all the current elections
     """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_current_elections();
-    response = jsonify(json);
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response;
+    raise NotImplementedError
+
 
 @app.route("/api/election/past", methods=["GET"])
 def past_election_list():
     """
     Returns a list of all the current elections
     """
-
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_past_elections();
-    return jsonify(json);
+    raise NotImplementedError
 
 @app.route("/api/election/upcomming", methods=["GET"])
 def upcomming_election_list():
     """
     Returns a list of all the current elections
     """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_upcomming_elections();
-    return jsonify(json);
-
-@app.route("/api/election/<id>", methods=["GET"])
-def election_get(id):
-    """
-    Gets all the details of the elections:
-        start date, end date, propositions, title
-    So the front end can fill in the interface components
-    Example of an api call:
-    http://127.0.0.1:5000/api/election/id/get?id=someId
-    One that should work for and return some json data:
-    http://127.0.0.1:5000/api/election/ASASU2017 Election/get?id=Alice
-    Note that this initial implementation is likely change as
-    the login route above is implemented. Instead we would
-    extract the id from the token created by logging in first
-    The token would be passed in the request in perhaps bearer or cookie
-    """
-    
-    electionId = id;
-    userId = request.args.get('id')
-    user = Voter(userId)
-    json = user.get_election(electionId)
-    response = jsonify(json);
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response;
+    raise NotImplementedError
 
 # TODO: This is an EXACT search method, the title has to be the same
 #       or the search will fail. Modify it to be an actual search function that
