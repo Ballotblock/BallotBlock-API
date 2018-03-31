@@ -275,7 +275,7 @@ def election_get_by_title():
     return jsonify(result), 200
 
 
-@app.route("/api/vote", methods=["POST"])
+@app.route("/api/votes", methods=["POST"])
 def election_vote():
     """
     Allows the user to cast a vote (sending the contents
@@ -308,7 +308,7 @@ def election_vote():
 
 
 
-@app.route("/api/signed_vote", methods=["POST"])
+@app.route("/api/vote", methods=["POST"])
 def election_cast_vote():
     # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
@@ -411,37 +411,4 @@ def get_voter_ballot_by_voter_uuid():
     return jsonify(result), 200
 
 
-
-@app.route("/api/election/current", methods=["GET"])
-def current_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_current_elections();
-    response = jsonify(json);
-    # response.headers.add('Access-Control-Allow-Origin', '*')
-    return response;
-
-@app.route("/api/election/past", methods=["GET"])
-def past_election_list():
-    """
-    Returns a list of all the current elections
-    """
-
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_past_elections();
-    return jsonify(json);
-
-@app.route("/api/election/upcomming", methods=["GET"])
-def upcomming_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_upcomming_elections();
-    return jsonify(json);
 
