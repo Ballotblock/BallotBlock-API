@@ -1,26 +1,4 @@
 # !/usr/bin/env python3
-#
-# Path modification trick to allow you to execute the program
-# using either:
-#     * python -m src.intermediary
-#     * python intermediary.py
-
-import sys
-import os
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-
-# Subdirectories
-SUBDIRECTORIES = [
-    "..",
-    "interfaces",
-    "sqlite3",
-]
-
-for subdirectory in SUBDIRECTORIES:
-    sys.path.append(os.path.join(dir_path, subdirectory))
-
-#
 # src/intermediary.py
 # Authors:
 #     Samuel Vargas
@@ -29,12 +7,7 @@ for subdirectory in SUBDIRECTORIES:
 from flask import Flask, request, jsonify, session
 from src import httpcode
 from src.validator import ElectionJsonValidator
-<<<<<<< HEAD
-from src.users import Voter
-from src.sessions import MemorySessionProvider
-=======
 from src.sessions import SessionManager
->>>>>>> refs/remotes/origin/master
 from src.registration import RegistrationServerProvider
 from src.interfaces import BackendIO
 from src import required_keys
@@ -42,7 +15,6 @@ from src.crypto_flow import CryptoFlow
 from src.time_manager import TimeManager
 import json
 import uuid
-import time
 
 app = Flask(__name__)
 
@@ -179,68 +151,25 @@ def election_create() -> httpcode.HttpCode:
     ):
         return httpcode.ELECTION_BALLOT_SIGNING_MISMATCH
 
+    election_crypto = CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict()
+    master_ballot['questions'] = json.dumps(master_ballot['questions'])
+    BACKEND_IO.create_election(
+        master_ballot,
+        creator_username=SESSION_MANAGER.get_username(session),
+        creator_master_ballot_signature=content['master_ballot_signature'],
+        creator_public_key_b64=content['creator_public_key'],
+        election_private_rsa_key=election_crypto['election_private_key'],
+        election_public_rsa_key=election_crypto['election_public_key'],
+        election_encrypted_fernet_key=election_crypto['election_encrypted_fernet_key']
+    )
+
+    return httpcode.ELECTION_CREATED_SUCCESSFULLY
+
     # Election Encryption Workflow:
     # 1) Generate an RSAKeyPair
     # 2) Generate a FernetObject (each contains a random symmetric key)
     # 3) Encrypt the random symmetric key using the RSAKeyPair (public key)
     # 4) Stick the private key, public key, and encrypted fernet key into the database
-
-@app.route("/api/election/current", methods=["GET"])
-def current_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_current_elections();
-    response = jsonify(json);
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response;
-
-@app.route("/api/election/past", methods=["GET"])
-def past_election_list():
-    """
-    Returns a list of all the current elections
-    """
-
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_past_elections();
-    return jsonify(json);
-
-@app.route("/api/election/upcomming", methods=["GET"])
-def upcomming_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_upcomming_elections();
-    return jsonify(json);
-
-@app.route("/api/election/<id>", methods=["GET"])
-def election_get(id):
-    """
-    Gets all the details of the elections:
-        start date, end date, propositions, title
-    So the front end can fill in the interface components
-    Example of an api call:
-    http://127.0.0.1:5000/api/election/id/get?id=someId
-    One that should work for and return some json data:
-    http://127.0.0.1:5000/api/election/ASASU2017 Election/get?id=Alice
-    Note that this initial implementation is likely change as
-    the login route above is implemented. Instead we would
-    extract the id from the token created by logging in first
-    The token would be passed in the request in perhaps bearer or cookie
-    """
-    
-    electionId = id;
-    userId = request.args.get('id')
-    user = Voter(userId)
-    json = user.get_election(electionId)
-    response = jsonify(json);
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response;
 
 # TODO: This is an EXACT search method, the title has to be the same
 #       or the search will fail. Modify it to be an actual search function that
@@ -248,7 +177,7 @@ def election_get(id):
 
 @app.route("/api/election/get_by_title", methods=["GET"])
 def election_get_by_title():
-   # Check if anyone is logged in
+    # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
         return httpcode.LOG_IN_FIRST
 
@@ -274,40 +203,7 @@ def election_get_by_title():
     return jsonify(result), 200
 
 
-@app.route("/api/vote", methods=["POST"])
-def election_vote():
-    """
-    Allows the user to cast a vote (sending the contents
-    of their filled out ballot.
-    accepts a post request in the following format
-    {
-        "election" : "some election"
-        "answers" : [1,2,3,4]
-    }
-    """
-    #-----------------------------------------------------------------> Old code below
-    # content = request.get_json(silent=True, force=True)
-    # userId = request.args.get('id')
-    # user = Voter(userId)
-    # json = user.vote(content['election'],content['answers'])
-    #------------------------------------------------------------------
-    
-    # return jsonify(json)
-
-    # Check if the election was found.
-    # result = BACKEND_IO.get_election_by_title(content["election_title"])
-    # if result is None:
-    #     return httpcode.ELECTION_NOT_FOUND
-
-    # # Remove the private_key if the election hasn't ended yet.
-    # if TIME_MANAGER.election_in_progress(result['end_date']):
-    #     result.pop('election_private_key')
-
-    # return jsonify(result), 200
-
-
-
-@app.route("/api/signed_vote", methods=["POST"])
+@app.route("/api/election/vote", methods=["POST"])
 def election_cast_vote():
     # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
@@ -344,7 +240,6 @@ def election_cast_vote():
     if BACKEND_IO.has_user_participated_in_election(username, ballot['election_title']):
         return httpcode.ELECTION_VOTER_VOTED_ALREADY
 
-
     # TODO: Verify that the provided answers match the question options!
     # TODO: Verify that the election hasn't ended already
 
@@ -358,7 +253,7 @@ def election_cast_vote():
 
     # Decrypt the encrypted Fernet key and then encrypt the user's ballot with the Fernet key
     encrypted_ballot = CryptoFlow.encrypt_vote_with_election_creator_rsa_keys_and_encrypted_fernet_key(
-        ballot_str = content['ballot'],
+        ballot_str=content['ballot'],
         rsa_private_key_b64=election["election_private_key"],
         rsa_public_key_b64=election["election_public_key"],
         encrypted_fernet_key=election["election_encrypted_fernet_key"]
@@ -368,7 +263,7 @@ def election_cast_vote():
     voter_uuid = str(uuid.uuid4())
     BACKEND_IO.create_ballot(
         encrypted_ballot,
-        election_title = election['election_title'],
+        election_title=election['election_title'],
         voter_uuid=voter_uuid,
         ballot_signature=content['ballot_signature'],
         voter_public_key_b64=content['voter_public_key'],
@@ -416,37 +311,24 @@ def get_voter_ballot_by_voter_uuid():
     return jsonify(result), 200
 
 
-
 @app.route("/api/election/current", methods=["GET"])
 def current_election_list():
     """
     Returns a list of all the current elections
     """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_current_elections();
-    response = jsonify(json);
-    # response.headers.add('Access-Control-Allow-Origin', '*')
-    return response;
+    raise NotImplementedError
+
 
 @app.route("/api/election/past", methods=["GET"])
 def past_election_list():
     """
     Returns a list of all the current elections
     """
-
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_past_elections();
-    return jsonify(json);
+    raise NotImplementedError
 
 @app.route("/api/election/upcomming", methods=["GET"])
 def upcomming_election_list():
     """
     Returns a list of all the current elections
     """
-    id = request.args.get('id')
-    user = Voter(id);
-    json = user.get_upcomming_elections();
-    return jsonify(json);
-
+    raise NotImplementedError
