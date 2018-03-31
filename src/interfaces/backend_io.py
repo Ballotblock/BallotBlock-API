@@ -4,7 +4,7 @@
 # Authors:
 #     Samuel Vargas
 
-from typing import Optional, Dict
+from typing import Optional, List, Dict
 import abc
 
 
@@ -88,4 +88,38 @@ class BackendIO(abc.ABC):
 
     @abc.abstractmethod
     def has_user_participated_in_election(self, username: str, election_title: str) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_all_ballots(self, election_title) -> List[Dict]:
+        """
+        This function should a return a list of dictionaries
+        of all the ballots that are associated with a given
+        Election.
+
+        The return'd list should look similar to this:
+         [
+            {
+              "voter_uuid": "This voter's uuid",
+              "ballot": "Encrypted string"
+              "ballot_signature": "The ballot signature"
+              "election_title": "Title of the election",
+            },
+
+            { 'ballot':  "...",
+              "voter_uuid" : "...",
+              "ballot" : "...",
+              "ballot_signature" : "...",
+              "election_title" : "..."
+            },
+
+            ...
+         ]
+
+        :param election_title: The title of the election, guaranteed to exist
+                               as 'get_election_by_title' is called prior to
+                               this function being used.
+
+        :return: A list of all the ballots stored on the backend.
+        """
         raise NotImplementedError

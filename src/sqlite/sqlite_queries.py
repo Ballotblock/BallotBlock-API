@@ -92,6 +92,11 @@ SELECT * from Election WHERE
     election_title = (?)
 """
 
+SELECT_ALL_BALLOTS = """
+SELECT * from BALLOT WHERE
+    election_title = (?)
+"""
+
 SELECT_BALLOT_BY_VOTER_UUID = """
 SELECT * from Ballot WHERE
     voter_uuid = (?)
