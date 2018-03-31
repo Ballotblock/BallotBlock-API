@@ -49,3 +49,8 @@ REQUIRED_ELECTION_VOTE_KEYS = (
 REQUIRED_ELECTION_GET_ALL_BALLOTS_KEYS = (
     "election_title",
 )
+
+REQUIRED_ELECTION_TALLY_RESULTS_KEYS = (
+    "election_title",
+)
+

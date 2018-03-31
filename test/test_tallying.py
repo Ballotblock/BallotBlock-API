@@ -18,7 +18,7 @@ from src.sessions.session_manager import SessionManager
 from src.validator import ElectionJsonValidator
 from src.registration import RegistrationServerProvider
 from src.time_manager import TimeManager
-from unittest.mock import MagicMock
+from unittest.mock import Mock, MagicMock
 
 JSON_HEADERS = {"Content-Type": "application/json"}
 
@@ -84,7 +84,7 @@ class TallyingTest(unittest.TestCase):
             {"username": "Alice", "answers": ["Red", "Triangle"]},
             {"username": "Bob", "answers": ["Red", "Square"]},
             {"username": "Charlie", "answers": ["Blue", "Circle"]},
-            {"username": "Doug", "answers": ["Blue", "Trapezoid"]},
+            {"username": "Doug", "answers": ["Blue", "Circle"]}, # Nobody voted for Trapezoid!
         ]
 
         # Vote as the above four people in this election.
@@ -147,4 +147,17 @@ class TallyingTest(unittest.TestCase):
 
             assert uuid_found, "UUID: {0} was returned when this person casted their vote but isn't" \
                                "present in the total list!".format(person['voter_uuid'])
+
+    def test_tallying_election_adds_answers_correctly(self):
+        self.time_manager.election_in_progress = Mock(return_value=False)
+        response = self.app.get("/api/election/tally", data=json.dumps({'election_title': self.election_title}))
+        tally_results = json.loads(response.data.decode('utf-8'))
+        # TODO: Don't hardcode so much in this test
+        assert(tally_results['participant_count'] == 4)
+        assert(tally_results['questions'][0]["Red or Blue?"]['Blue'] == 2)
+        assert(tally_results['questions'][0]["Red or Blue?"]['Red'] == 2)
+        assert(tally_results['questions'][1]['Triangle, Square, Circle, Trapezoid?']['Circle'] == 2)
+        assert(tally_results['questions'][1]['Triangle, Square, Circle, Trapezoid?']['Square'] == 1)
+        assert(tally_results['questions'][1]['Triangle, Square, Circle, Trapezoid?']['Triangle'] == 1)
+        assert(tally_results['questions'][1]['Triangle, Square, Circle, Trapezoid?']['Trapezoid'] == 0)
 
