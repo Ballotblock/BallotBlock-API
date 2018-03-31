@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS ElectionParticipation
 (election_title TEXT NOT NULL,
  username       TEXT NOT NULL,
                 FOREIGN KEY(election_title) REFERENCES Election(election_title)
-                PRIMARY KEY(election_title))
+                PRIMARY KEY(username))
 """
 
 # An individual ballot
