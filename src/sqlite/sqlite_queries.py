@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS ElectionParticipation
 (election_title TEXT NOT NULL,
  username       TEXT NOT NULL,
                 FOREIGN KEY(election_title) REFERENCES Election(election_title)
-                PRIMARY KEY(election_title))
+                PRIMARY KEY(username))
 """
 
 # An individual ballot
@@ -89,6 +89,11 @@ VALUES(?, ?, ?, ?)
 
 SELECT_ELECTION_BY_TITLE = """
 SELECT * from Election WHERE
+    election_title = (?)
+"""
+
+SELECT_ALL_BALLOTS = """
+SELECT * from BALLOT WHERE
     election_title = (?)
 """
 
