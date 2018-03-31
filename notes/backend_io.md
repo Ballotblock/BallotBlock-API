@@ -43,8 +43,7 @@ The relationships between the tables are defined as follows:
 The reference ``SQLite3`` implementation uses ``FOREIGN KEY``'s and ``UNIQUE`` constraints as a sanity check but the ``BallotBlock`` API will maintain this referential integrity for you by calling the appropriate methods prior to storing anything on the actively used ``BackendIO``.
 
 # General details
-* All keys passed into the ``BackendIO`` methods are strings.
-* All values passed into the ``BackendIO`` methods are strings with the exception of the ``"start_date"`` and ``"end_date"`` keys. (The values are integers.)
+* All keys / values passed into the ``BackendIO`` methods are strings.
 
 # Method details.
 Please see ``src/interfaces/backend_io.py`` for specific details about each method that needs to be implemented for a correct implementation of the ``BackendIO`` interface.
