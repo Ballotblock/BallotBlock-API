@@ -18,8 +18,6 @@ _REQUIRED_PROPOSITION_KEYS = (
     "question", "choice"
 )
 
-_MINIMUM_ELECTION_LENGTH = datetime.timedelta(days=1).total_seconds()
-
 IS_VALID = "All required keys present. Data is valid."
 MISSING_KEY = "At least one of the required keys {0} are missing".format(_REQUIRED_KEYS)
 
@@ -53,10 +51,10 @@ class ElectionJsonValidator(JsonValidator):
 
         # Time Validation
 
-        # TODO: Check if start_date is a valid unix timestamp
+        # TODO: Check if start_date is a valid ISO8601 string
         raise NotImplementedError()
 
-        # TODO: Check if end_valid is a valid unix timestamp
+        # TODO: Check if end_valid is a valid ISO8601 string
         raise NotImplementedError()
 
         # TODO: Ensure that the start date is AFTER the current time

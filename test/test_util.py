@@ -22,8 +22,8 @@ ELECTION_DUMMY_RSA_FERNET = {
 
 def generate_election_post_data(election_title: str = None,
                                 description: str = None,
-                                start_date: int = None,
-                                end_date: int = None,
+                                start_date: str = None,
+                                end_date: str = None,
                                 creator_keys: ECDSAKeyPair = None,
                                 questions: List[List] = None):
     assert creator_keys and questions

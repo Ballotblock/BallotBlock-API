@@ -19,6 +19,7 @@ from src.httpcode import *
 import json
 import src.intermediary
 import time
+from datetime import timezone
 import datetime
 import uuid
 
@@ -44,8 +45,8 @@ class VotingTest(unittest.TestCase):
             2) A user can retrieve their vote from the server
             3) If the election is over the user can decrypt their ballot.
         """
-        self.start_date = int(time.time())
-        self.end_date = int((datetime.datetime.now() + datetime.timedelta(days=1)).timestamp())
+        self.start_date = TimeManager.get_current_time_as_iso_format_string()
+        self.end_date = TimeManager.get_current_time_plus_time_delta_in_days_as_iso_8601_str(days=1)
 
     def setUp(self):
         CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(

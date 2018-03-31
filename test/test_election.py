@@ -6,10 +6,7 @@
 #
 
 import json
-import uuid
 import unittest
-import datetime
-import time
 import src.intermediary
 from test.test_util import generate_election_post_data, generate_voter_post_data, ELECTION_DUMMY_RSA_FERNET
 from src.httpcode import *
@@ -49,8 +46,9 @@ class ElectionTest(unittest.TestCase):
                then the private key is not leaked.
             4) If the user retrieves the election after the election conclusion
         """
-        self.start_date = int(time.time())
-        self.end_date = int((datetime.datetime.now() + datetime.timedelta(days=1)).timestamp())
+
+        self.start_date = TimeManager.get_current_time_as_iso_format_string()
+        self.end_date = TimeManager.get_current_time_plus_time_delta_in_days_as_iso_8601_str(days=1)
 
 
     def setUp(self):
