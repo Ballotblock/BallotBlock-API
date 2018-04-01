@@ -8,6 +8,7 @@
 import json
 import unittest
 import src.intermediary
+from test.config import test_backend
 from test.dummy_keys import *
 from test.test_util import generate_election_post_data, generate_voter_post_data, ELECTION_DUMMY_RSA_FERNET
 from src.httpcode import *
@@ -43,18 +44,22 @@ class ElectionPastPresentFutureTest(unittest.TestCase):
         self.election_title = "ElectionPastPresentFutureTest"
         self.election_description = "Test that we can retrieve elections via their start / end dates."
 
+        self.backend = test_backend()
         self.start_date = TimeManager.get_current_time_as_iso_format_string()
         self.end_date = TimeManager.get_current_time_plus_time_delta_in_days_as_iso_8601_str(days=1)
 
-    def setUp(self):
-        # Setup an election
+        # Setup testing app
         self.app = src.intermediary.start_test_sqlite(
-            backend_io=SQLiteBackendIO(":memory:"),
+            backend_io=self.backend,
             session_manager=self.session_manager,
             election_json_validator=self.election_json_validator,
             registration_provider=self.registration_provider,
             time_manager=self.time_manager
         )
+
+    def setUp(self):
+        # Delete all data prior to running the test
+        self.backend.nuke()
 
         self.election = generate_election_post_data(
             election_title=self.election_title,

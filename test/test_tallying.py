@@ -9,6 +9,7 @@ import json
 import uuid
 import unittest
 import src.intermediary
+from test.config import test_backend
 from test.test_util import generate_election_post_data, generate_voter_post_data, ELECTION_DUMMY_RSA_FERNET
 from src.httpcode import *
 from src.crypto_suite import ECDSAKeyPair
@@ -45,19 +46,23 @@ class TallyingTest(unittest.TestCase):
 
         self.start_date = TimeManager.get_current_time_as_iso_format_string()
         self.end_date = TimeManager.get_current_time_plus_time_delta_in_days_as_iso_8601_str(days=1)
+        self.backend = test_backend()
 
-    def setUp(self):
         CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
             return_value=ELECTION_DUMMY_RSA_FERNET)
 
         # Setup an election
         self.app = src.intermediary.start_test_sqlite(
-            backend_io=SQLiteBackendIO(":memory:"),
+            backend_io=self.backend,
             session_manager=self.session_manager,
             election_json_validator=self.election_json_validator,
             registration_provider=self.registration_provider,
             time_manager=self.time_manager
         )
+
+    def setUp(self):
+        # Delete all data prior to running the tests
+        self.backend.nuke()
 
         # Generate an election creation post dictionary suitable for sending to the server
         self.election = generate_election_post_data(
