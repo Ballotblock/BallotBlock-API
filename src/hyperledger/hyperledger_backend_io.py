@@ -23,10 +23,43 @@ from .filter import Filter
 
 
 class HyperledgerBackendIO() :
+
     def __init__(self,url):
+    """
+    This url is the url of the hyperledger composer rest server
+    It may of course be one that is live on a server somewhere or simply hosted locally
+    """
         self.hyperledger = url
     
     def create_election(creator,electionTitle,propositions,startDate,endDate):
+        """
+        Lets a creator type user create an election
+        This methods takes the following parameters:
+            - creator : a creators userId, it is the same as the username used to login
+            - electionTitle : title of the election
+            - propositions : is an array of proposition, each proposition corresponds to a particular position
+                and has a list of choices. Below is an example of a propositions json
+                    "propositions": [{
+                                            "question": "Senator for: Barret,the Honors College",
+                                            "choices": [
+                                                "Danielle Heffners",
+                                                "Emily Beaman",
+                                                "Joseph Briones",
+                                                "Keyle Storm Cloud"
+                                            ]
+                                        },
+                                        {
+                                            "question": "Senator for: Ira A. Fulton Schools of Engineering",
+                                            "choices": [
+                                                "Caroline Kireopoulos",
+                                                "Eyad Al Sulaimi"
+                                            ]
+                                        }]
+            - startDate : the date that the election will start in iso 8601 format
+            - endDate : the date that the election will end in iso 8601 format
+        Implementation wise, this method will do a post request to the elections endpoint on the 
+        hyperledger composer rest server, and thus creating the "resource" election 
+        """
         raise NotImplementedError
 
     def create_ballot(self,voter,electionId,answer):
@@ -70,9 +103,9 @@ class HyperledgerBackendIO() :
         url = self.hyperledger + "elections/" + electionId
         result = requests.get(url)
 
-        ballotId = voter +"_" + electionId;
-        url2 = hyperledger + "ballots/" + ballotId + "?filter=" + Filter.ballot_filter();
-        result2 = requests.get(url2);
+        ballotId = voter +"_" + electionId
+        url2 = self.hyperledger + "ballots/" + ballotId + "?filter=" + Filter.ballot_filter()
+        result2 = requests.get(url2)
 
         if(result2.status_code == 200):
             response = {
@@ -100,7 +133,7 @@ class HyperledgerBackendIO() :
         Returns the past elections in the hyperledger backend
         """
 
-        url = hyperledger + "elections?filter="  + Filter.past_filter();
+        url = self.hyperledger + "elections?filter="  + Filter.past_filter();
         result = requests.get(url)
         return result.json(), result.status_code
 
@@ -128,7 +161,7 @@ class HyperledgerBackendIO() :
         - return the election object to the requesting client
         """
 
-        raise NotImplementedError;
+        raise NotImplementedError
 
 
 
