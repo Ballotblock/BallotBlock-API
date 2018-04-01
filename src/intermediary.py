@@ -171,38 +171,9 @@ def election_create() -> httpcode.HttpCode:
     # 3) Encrypt the random symmetric key using the RSAKeyPair (public key)
     # 4) Stick the private key, public key, and encrypted fernet key into the database
 
-<<<<<<< HEAD
-
-@app.route("/api/election/<id>", methods=["GET"])
-def election_get(id):
-    """
-    """
-    raise NotImplementedError
-
-@app.route("/api/election/current", methods=["GET"])
-def current_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    raise NotImplementedError
 
 
-@app.route("/api/election/past", methods=["GET"])
-def past_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    raise NotImplementedError
 
-@app.route("/api/election/upcomming", methods=["GET"])
-def upcomming_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    raise NotImplementedError
-
-=======
->>>>>>> refs/remotes/origin/master
 # TODO: This is an EXACT search method, the title has to be the same
 #       or the search will fail. Modify it to be an actual search function that
 #       returns a list of potential elections
@@ -235,44 +206,7 @@ def election_get_by_title():
     return jsonify(result), 200
 
 
-<<<<<<< HEAD
-@app.route("/api/votes", methods=["POST"])
-def election_vote():
-    """
-    Allows the user to cast a vote (sending the contents
-    of their filled out ballot.
-    accepts a post request in the following format
-    {
-        "election" : "some election"
-        "answers" : [1,2,3,4]
-    }
-    """
-    #-----------------------------------------------------------------> Old code below
-    # content = request.get_json(silent=True, force=True)
-    # userId = request.args.get('id')
-    # user = Voter(userId)
-    # json = user.vote(content['election'],content['answers'])
-    #------------------------------------------------------------------
-    
-    # return jsonify(json)
-
-    # Check if the election was found.
-    # result = BACKEND_IO.get_election_by_title(content["election_title"])
-    # if result is None:
-    #     return httpcode.ELECTION_NOT_FOUND
-
-    # # Remove the private_key if the election hasn't ended yet.
-    # if TIME_MANAGER.election_in_progress(result['end_date']):
-    #     result.pop('election_private_key')
-
-    # return jsonify(result), 200
-
-
-
-@app.route("/api/vote", methods=["POST"])
-=======
 @app.route("/api/election/vote", methods=["POST"])
->>>>>>> refs/remotes/origin/master
 def election_cast_vote():
     # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
@@ -380,16 +314,14 @@ def get_voter_ballot_by_voter_uuid():
     return jsonify(result), 200
 
 
-<<<<<<< HEAD
 
-=======
+
 @app.route("/api/election/current", methods=["GET"])
 def current_election_list():
     """
     Returns a list of all the current elections
     """
     raise NotImplementedError
-
 
 @app.route("/api/election/past", methods=["GET"])
 def past_election_list():
@@ -404,4 +336,35 @@ def upcomming_election_list():
     Returns a list of all the current elections
     """
     raise NotImplementedError
->>>>>>> refs/remotes/origin/master
+
+@app.route("/api/vote", methods=["POST"])
+def election_vote():
+    """
+    Allows the user to cast a vote (sending the contents
+    of their filled out ballot.
+    accepts a post request in the following format
+    {
+        "election" : "some election"
+        "answers" : [1,2,3,4]
+    }
+    """
+    #-----------------------------------------------------------------> Old code below
+    # content = request.get_json(silent=True, force=True)
+    # userId = request.args.get('id')
+    # user = Voter(userId)
+    # json = user.vote(content['election'],content['answers'])
+    # return jsonify(json)
+
+    #------------------------------------------------------------------
+    
+@app.route("/api/election/<id>", methods=["GET"])
+def election_get(id):
+    """
+    """
+    raise NotImplementedError
+
+@app.route("/api/election/", methods=["POST"])
+def create_election():
+    ""
+    ""
+    raise NotImplementedError
