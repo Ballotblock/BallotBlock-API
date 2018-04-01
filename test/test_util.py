@@ -25,7 +25,7 @@ def generate_election_post_data(election_title: str = None,
                                 start_date: str = None,
                                 end_date: str = None,
                                 creator_keys: ECDSAKeyPair = None,
-                                questions: List[List] = None):
+                                questions: List[List] = None, **kwargs):
     assert creator_keys and questions
 
     master_ballot_json_str = json.dumps({

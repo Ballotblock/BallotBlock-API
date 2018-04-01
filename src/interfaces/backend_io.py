@@ -123,3 +123,7 @@ class BackendIO(abc.ABC):
         :return: A list of all the ballots stored on the backend.
         """
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_all_elections(self) -> List[Dict]:
+        raise NotImplementedError

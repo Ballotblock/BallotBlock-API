@@ -172,6 +172,7 @@ def election_create() -> httpcode.HttpCode:
     # 3) Encrypt the random symmetric key using the RSAKeyPair (public key)
     # 4) Stick the private key, public key, and encrypted fernet key into the database
 
+
 # TODO: This is an EXACT search method, the title has to be the same
 #       or the search will fail. Modify it to be an actual search function that
 #       returns a list of potential elections
@@ -198,7 +199,7 @@ def election_get_by_title():
         return httpcode.ELECTION_NOT_FOUND
 
     # Remove the private_key if the election hasn't ended yet.
-    if TIME_MANAGER.election_in_progress(result['end_date']):
+    if TIME_MANAGER.election_in_progress(result["start_date"], result['end_date']):
         result.pop('election_private_key')
 
     return jsonify(result), 200
@@ -300,7 +301,7 @@ def get_voter_ballot_by_voter_uuid():
 
     # If the election has ended, decrypt the users ballot and return
     # that instead.
-    if not TIME_MANAGER.election_in_progress(election['end_date']):
+    if not TIME_MANAGER.election_in_progress(election["start_date"], election['end_date']):
         result['ballot'] = CryptoFlow.decrypt_ballot(
             encrypted_ballot_str=result['ballot'],
             election_rsa_public_key_b64=election['election_public_key'],
@@ -310,6 +311,7 @@ def get_voter_ballot_by_voter_uuid():
 
     # Return the found content
     return jsonify(result), 200
+
 
 @app.route("/api/ballot/all", methods=["GET"])
 def get_all_ballots_in_election():
@@ -366,15 +368,14 @@ def get_all_ballots_in_election():
     all_ballots = BACKEND_IO.get_all_ballots(content['election_title'])
 
     # 5) If the election is over, decrypt all ballots.
-    if not TIME_MANAGER.election_in_progress(election['end_date']):
+    if not TIME_MANAGER.election_in_progress(election["start_date"], election['end_date']):
         for ballot in all_ballots:
-            ballot['ballot']  = CryptoFlow.decrypt_ballot(
+            ballot['ballot'] = CryptoFlow.decrypt_ballot(
                 encrypted_ballot_str=ballot['ballot'],
                 election_rsa_public_key_b64=election['election_public_key'],
                 election_rsa_private_key_b64=election['election_private_key'],
                 election_encrypted_fernet_key_b64=election['election_encrypted_fernet_key'],
             )
-
 
     # 6) Convert it to JSON and return it to the user, indicate 200 for OK
     return jsonify(all_ballots), 200
@@ -436,7 +437,7 @@ def tally_results_for_given_election():
         return httpcode.ELECTION_NOT_FOUND
 
     # 4) If the election is still in process return an error
-    if TIME_MANAGER.election_in_progress(election['end_date']):
+    if TIME_MANAGER.election_in_progress(election["start_date"], election['end_date']):
         return httpcode.ELECTION_CANT_TALLY_VOTING_STILL_IN_PROGRESS
 
     # 5) Request each ballot from the backend (no order is required)
@@ -444,7 +445,7 @@ def tally_results_for_given_election():
 
     # 6) Decrypt each ballot.
     for ballot in all_ballots:
-        ballot['ballot']  = CryptoFlow.decrypt_ballot(
+        ballot['ballot'] = CryptoFlow.decrypt_ballot(
             encrypted_ballot_str=ballot['ballot'],
             election_rsa_public_key_b64=election['election_public_key'],
             election_rsa_private_key_b64=election['election_private_key'],
@@ -458,25 +459,55 @@ def tally_results_for_given_election():
     return jsonify(result), 200
 
 
-
-@app.route("/api/election/current", methods=["GET"])
-def current_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    raise NotImplementedError
-
-
 @app.route("/api/election/past", methods=["GET"])
-def past_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    raise NotImplementedError
+def get_past_elections():
+    # Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
 
-@app.route("/api/election/upcomming", methods=["GET"])
-def upcomming_election_list():
-    """
-    Returns a list of all the current elections
-    """
-    raise NotImplementedError
+    # Retrieve all elections
+    all_elections = BACKEND_IO.get_all_elections()
+
+    # Remove any election from the list that fails the test
+    pruned = [
+        election for election in all_elections
+        if TimeManager.election_in_past(election['end_date'])
+    ]
+
+    return jsonify(pruned), 200
+
+
+@app.route("/api/election/present", methods=["GET"])
+def get_present_elections():
+    # Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
+
+    # Retrieve all elections
+    all_elections = BACKEND_IO.get_all_elections()
+
+    # Remove any election from the list that fails the test
+    pruned = [
+        election for election in all_elections
+        if TimeManager.election_in_progress(election["start_date"], election['end_date'])
+    ]
+
+    return jsonify(pruned), 200
+
+
+@app.route("/api/election/future", methods=["GET"])
+def get_future_elections():
+    # Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
+
+    # Retrieve all elections
+    all_elections = BACKEND_IO.get_all_elections()
+
+    # Remove any election from the list that fails the test
+    pruned = [
+        election for election in all_elections
+        if TimeManager.election_in_future(election["start_date"])
+    ]
+
+    return jsonify(pruned), 200

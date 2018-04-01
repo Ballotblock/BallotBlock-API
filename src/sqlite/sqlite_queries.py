@@ -92,6 +92,10 @@ SELECT * from Election WHERE
     election_title = (?)
 """
 
+SELECT_ALL_ELECTIONS = """
+SELECT * from ELECTION
+"""
+
 SELECT_ALL_BALLOTS = """
 SELECT * from BALLOT WHERE
     election_title = (?)
