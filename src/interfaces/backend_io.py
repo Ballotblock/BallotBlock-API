@@ -135,4 +135,4 @@ class BackendIO(abc.ABC):
         Used for testing, should never be exposed via the http API.
         :return:
         """
-        pass
+        raise NotImplementedError
