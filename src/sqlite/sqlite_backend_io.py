@@ -173,5 +173,11 @@ class SQLiteBackendIO(BackendIO):
             })
         return output
 
+    def nuke(self):
+        self.cursor.execute(DELETE_ALL_BALLOT)
+        self.cursor.execute(DELETE_ALL_ELECTION)
+        self.cursor.execute(DELETE_ALL_ELECTION_PARTICIPATION)
+        self.connection.commit()
+
     def close(self):
         self.connection.close()

@@ -110,3 +110,11 @@ SELECT_ELECTION_PARTICIPATION_BY_USERNAME = """
 SELECT * from ElectionParticipation WHERE
     username = (?)
 """
+
+#
+# Deletion (Testing)
+#
+
+DELETE_ALL_ELECTION = "DELETE from ELECTION;"
+DELETE_ALL_ELECTION_PARTICIPATION = "DELETE from ElectionParticipation"
+DELETE_ALL_BALLOT = "DELETE from Ballot"

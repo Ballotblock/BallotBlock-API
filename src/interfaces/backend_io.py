@@ -127,3 +127,12 @@ class BackendIO(abc.ABC):
     @abc.abstractmethod
     def get_all_elections(self) -> List[Dict]:
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def nuke(self):
+        """
+        Delete ALL data stored on the backend.
+        Used for testing, should never be exposed via the http API.
+        :return:
+        """
+        pass
