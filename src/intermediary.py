@@ -1,26 +1,4 @@
 # !/usr/bin/env python3
-#
-# Path modification trick to allow you to execute the program
-# using either:
-#     * python -m src.intermediary
-#     * python intermediary.py
-
-import sys
-import os
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-
-# Subdirectories
-SUBDIRECTORIES = [
-    "..",
-    "interfaces",
-    "sqlite3",
-]
-
-for subdirectory in SUBDIRECTORIES:
-    sys.path.append(os.path.join(dir_path, subdirectory))
-
-#
 # src/intermediary.py
 # Authors:
 #     Samuel Vargas
@@ -29,21 +7,14 @@ for subdirectory in SUBDIRECTORIES:
 from flask import Flask, request, jsonify, session
 from src import httpcode
 from src.validator import ElectionJsonValidator
-<<<<<<< HEAD
-from src.users import Voter
-from src.sessions import MemorySessionProvider
-=======
 from src.sessions import SessionManager
->>>>>>> refs/remotes/origin/master
 from src.registration import RegistrationServerProvider
 from src.interfaces import BackendIO
 from src import required_keys
-from src.crypto_suite import ECDSAKeyPair, FernetCrypt, RSAKeyPair
-from src.crypto_flow import CryptoFlow, verify_data_is_signed_ecdsa
+from src.crypto_flow import CryptoFlow
 from src.time_manager import TimeManager
 import json
 import uuid
-import time
 
 app = Flask(__name__)
 
@@ -173,12 +144,26 @@ def election_create() -> httpcode.HttpCode:
 
     # Verify that the election creator correctly signed their 'master_ballot_signature' using
     # their 'creator_public_key'
-    if not verify_data_is_signed_ecdsa(
+    if not CryptoFlow.verify_data_is_signed_ecdsa(
             content['master_ballot'],
             content['master_ballot_signature'],
             content['creator_public_key']
     ):
         return httpcode.ELECTION_BALLOT_SIGNING_MISMATCH
+
+    election_crypto = CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict()
+    master_ballot['questions'] = json.dumps(master_ballot['questions'])
+    BACKEND_IO.create_election(
+        master_ballot,
+        creator_username=SESSION_MANAGER.get_username(session),
+        creator_master_ballot_signature=content['master_ballot_signature'],
+        creator_public_key_b64=content['creator_public_key'],
+        election_private_rsa_key=election_crypto['election_private_key'],
+        election_public_rsa_key=election_crypto['election_public_key'],
+        election_encrypted_fernet_key=election_crypto['election_encrypted_fernet_key']
+    )
+
+    return httpcode.ELECTION_CREATED_SUCCESSFULLY
 
     # Election Encryption Workflow:
     # 1) Generate an RSAKeyPair
@@ -186,6 +171,7 @@ def election_create() -> httpcode.HttpCode:
     # 3) Encrypt the random symmetric key using the RSAKeyPair (public key)
     # 4) Stick the private key, public key, and encrypted fernet key into the database
 
+<<<<<<< HEAD
 
 @app.route("/api/election/<id>", methods=["GET"])
 def election_get(id):
@@ -215,13 +201,15 @@ def upcomming_election_list():
     """
     raise NotImplementedError
 
+=======
+>>>>>>> refs/remotes/origin/master
 # TODO: This is an EXACT search method, the title has to be the same
 #       or the search will fail. Modify it to be an actual search function that
 #       returns a list of potential elections
 
 @app.route("/api/election/get_by_title", methods=["GET"])
 def election_get_by_title():
-   # Check if anyone is logged in
+    # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
         return httpcode.LOG_IN_FIRST
 
@@ -247,6 +235,7 @@ def election_get_by_title():
     return jsonify(result), 200
 
 
+<<<<<<< HEAD
 @app.route("/api/votes", methods=["POST"])
 def election_vote():
     """
@@ -281,6 +270,9 @@ def election_vote():
 
 
 @app.route("/api/vote", methods=["POST"])
+=======
+@app.route("/api/election/vote", methods=["POST"])
+>>>>>>> refs/remotes/origin/master
 def election_cast_vote():
     # Check if anyone is logged in
     if not SESSION_MANAGER.is_logged_in(session):
@@ -317,38 +309,30 @@ def election_cast_vote():
     if BACKEND_IO.has_user_participated_in_election(username, ballot['election_title']):
         return httpcode.ELECTION_VOTER_VOTED_ALREADY
 
-
     # TODO: Verify that the provided answers match the question options!
     # TODO: Verify that the election hasn't ended already
 
     # Verify that the user signed their ballot data correctly
-    if not verify_data_is_signed_ecdsa(
+    if not CryptoFlow.verify_data_is_signed_ecdsa(
             content['ballot'],
             content['ballot_signature'],
             content['voter_public_key']
     ):
         return httpcode.ELECTION_BALLOT_SIGNING_MISMATCH
 
-    # Fetch the RSA Key from the ballot's corresponding election
-    election_rsa = RSAKeyPair(
-        use_public_pkcs1_b64_key=election["election_public_key"],
-        use_private_pkcs1_b64_key=election["election_private_key"]
+    # Decrypt the encrypted Fernet key and then encrypt the user's ballot with the Fernet key
+    encrypted_ballot = CryptoFlow.encrypt_vote_with_election_creator_rsa_keys_and_encrypted_fernet_key(
+        ballot_str=content['ballot'],
+        rsa_private_key_b64=election["election_private_key"],
+        rsa_public_key_b64=election["election_public_key"],
+        encrypted_fernet_key=election["election_encrypted_fernet_key"]
     )
 
-    # Decrypt the fernet symmetric key
-    decrypted_fernet_key = election_rsa.decrypt_b64_to_bytes(election["election_encrypted_fernet_key"])
-    fernet_crypt = FernetCrypt(
-        use_fernet_key_bytes=decrypted_fernet_key
-    )
-
-    # Encrypt the user's ballot using our decrypted symmetric fernet key
-    encrypted_ballot = fernet_crypt.encrypt_to_b64(content["ballot"].encode('utf-8')).decode('utf-8')
-
+    # Generate a per election voter UUID so the user can retrieve this ballot again.
     voter_uuid = str(uuid.uuid4())
-
     BACKEND_IO.create_ballot(
         encrypted_ballot,
-        election_title = election['election_title'],
+        election_title=election['election_title'],
         voter_uuid=voter_uuid,
         ballot_signature=content['ballot_signature'],
         voter_public_key_b64=content['voter_public_key'],
@@ -379,8 +363,45 @@ def get_voter_ballot_by_voter_uuid():
     if result is None:
         return "Could not find a voter_ballot with this uuid", 404
 
+    # Get the corresponding election
+    election = BACKEND_IO.get_election_by_title(result['election_title'])
+
+    # If the election has ended, decrypt the users ballot and return
+    # that instead.
+    if not TIME_MANAGER.election_in_progress(election['end_date']):
+        result['ballot'] = CryptoFlow.decrypt_ballot(
+            encrypted_ballot_str=result['ballot'],
+            election_rsa_public_key_b64=election['election_public_key'],
+            election_rsa_private_key_b64=election['election_private_key'],
+            election_encrypted_fernet_key_b64=election['election_encrypted_fernet_key'],
+        )
+
     # Return the found content
     return jsonify(result), 200
 
 
+<<<<<<< HEAD
 
+=======
+@app.route("/api/election/current", methods=["GET"])
+def current_election_list():
+    """
+    Returns a list of all the current elections
+    """
+    raise NotImplementedError
+
+
+@app.route("/api/election/past", methods=["GET"])
+def past_election_list():
+    """
+    Returns a list of all the current elections
+    """
+    raise NotImplementedError
+
+@app.route("/api/election/upcomming", methods=["GET"])
+def upcomming_election_list():
+    """
+    Returns a list of all the current elections
+    """
+    raise NotImplementedError
+>>>>>>> refs/remotes/origin/master
