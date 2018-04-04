@@ -19,8 +19,9 @@ class AuthenticationCookie:
         except JSONDecodeError:
             return False
 
-        if 'authentication' not in token:
-            return False
+        for item in ('authentication', 'username', 'account_type'):
+            if item not in token:
+                return False
 
         if CookieEncryptor(password).decrypt(token['authentication'].encode('utf-8')) is None:
             return False
