@@ -13,6 +13,7 @@ from src.interfaces import BackendIO
 from src import required_keys
 from src.crypto_flow import CryptoFlow
 from src.time_manager import TimeManager
+from src.tally_machine import TallyMachine
 import json
 import uuid
 
@@ -312,6 +313,153 @@ def get_voter_ballot_by_voter_uuid():
 
     # Return the found content
     return jsonify(result), 200
+
+@app.route("/api/ballot/all", methods=["GET"])
+def get_all_ballots_in_election():
+    """
+    Expects a JSON object to be sent with the following format:
+
+    {
+        "election_title", "Election_Title"
+    }
+
+    :return: Either ELECTION_NOT_FOUND or a JSON object with
+             the following format:
+             [
+                {
+                  "voter_uuid": "This voter's uuid",
+                  "ballot": "Encrypted data OR the user's unencrypted ballot as a json string
+                  "ballot_signature": "The ballot signature"
+                  "election_title": "Title of the election",
+                },
+
+                { 'answers': '['Red', 'Triangle']'
+                  "voter_uuid" :
+                  "ballot" :
+                  "ballot_signature" :
+                  "election_title" :
+                },
+
+                ...
+             ]
+    """
+
+    # TODO: Return an error if the election hasn't started yet.
+
+    # 0) Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
+
+    # 1) Check if any JSON was supplied at all
+    content = request.get_json(silent=True, force=True)
+    if content is None:
+        return httpcode.MISSING_OR_MALFORMED_JSON
+
+    # 2) Verify that the "election_title" key was provided
+    for key in required_keys.REQUIRED_ELECTION_GET_ALL_BALLOTS_KEYS:
+        if key not in content:
+            return "Missing key: '{0}' in sent JSON".format(key), 400
+
+    # 3) Verify that the election actually exists
+    election = BACKEND_IO.get_election_by_title(content['election_title'])
+    if election is None:
+        return httpcode.ELECTION_NOT_FOUND
+
+    # 4) Request each ballot from the backend (no order is required)
+    all_ballots = BACKEND_IO.get_all_ballots(content['election_title'])
+
+    # 5) If the election is over, decrypt all ballots.
+    if not TIME_MANAGER.election_in_progress(election['end_date']):
+        for ballot in all_ballots:
+            ballot['ballot']  = CryptoFlow.decrypt_ballot(
+                encrypted_ballot_str=ballot['ballot'],
+                election_rsa_public_key_b64=election['election_public_key'],
+                election_rsa_private_key_b64=election['election_private_key'],
+                election_encrypted_fernet_key_b64=election['election_encrypted_fernet_key'],
+            )
+
+
+    # 6) Convert it to JSON and return it to the user, indicate 200 for OK
+    return jsonify(all_ballots), 200
+
+
+@app.route("/api/election/tally", methods=["GET"])
+def tally_results_for_given_election():
+    """
+    Accepts a JSON object in the format:
+    {
+        "election_title": "Whatever the election title is.
+    }
+
+    :return: A JSON object with the format:
+                 {
+                    "participant_count" : 48
+                    "questions" :
+                    [
+                        {
+                        "Favorite Color?" :
+                            {
+                                "Red" : 32
+                                "Blue" : 16
+                            },
+                        },
+
+                        {
+                        "Favorite SHape?" :
+                            {
+                                "Triangle" : 40
+                                "Square" : 8
+                            },
+                        },
+
+
+                        ....
+
+                     ]
+                 }
+    """
+
+    # 0) Check if anyone is logged in
+    if not SESSION_MANAGER.is_logged_in(session):
+        return httpcode.LOG_IN_FIRST
+
+    # 1) Check if any JSON was supplied at all
+    content = request.get_json(silent=True, force=True)
+    if content is None:
+        return httpcode.MISSING_OR_MALFORMED_JSON
+
+    # 2) Verify that the "election_title" key was provided
+    for key in required_keys.REQUIRED_ELECTION_TALLY_RESULTS_KEYS:
+        if key not in content:
+            return "Missing key: '{0}' in sent JSON".format(key), 400
+
+    # 3) Verify that the election actually exists
+    election = BACKEND_IO.get_election_by_title(content['election_title'])
+    if election is None:
+        return httpcode.ELECTION_NOT_FOUND
+
+    # 4) If the election is still in process return an error
+    if TIME_MANAGER.election_in_progress(election['end_date']):
+        return httpcode.ELECTION_CANT_TALLY_VOTING_STILL_IN_PROGRESS
+
+    # 5) Request each ballot from the backend (no order is required)
+    all_ballots = BACKEND_IO.get_all_ballots(content['election_title'])
+
+    # 6) Decrypt each ballot.
+    for ballot in all_ballots:
+        ballot['ballot']  = CryptoFlow.decrypt_ballot(
+            encrypted_ballot_str=ballot['ballot'],
+            election_rsa_public_key_b64=election['election_public_key'],
+            election_rsa_private_key_b64=election['election_private_key'],
+            election_encrypted_fernet_key_b64=election['election_encrypted_fernet_key'],
+        )
+
+    # 7) Calculate and return the results of the election
+    questions = json.loads(election['questions'])
+
+    result = TallyMachine.tally_election_ballots(questions, all_ballots)
+    return jsonify(result), 200
+
 
 
 

@@ -21,7 +21,7 @@
 #   * Verify that dictionaries do not contain extra keys
 
 
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from src.interfaces.backend_io import BackendIO
 from .sqlite_queries import *
 import sqlite3
@@ -29,6 +29,7 @@ import json
 
 
 class SQLiteBackendIO(BackendIO):
+
     def __init__(self, db_path):
         super().__init__()
         self.connection = sqlite3.connect(db_path)
@@ -138,6 +139,20 @@ class SQLiteBackendIO(BackendIO):
         self.cursor.execute(SELECT_ELECTION_PARTICIPATION_BY_USERNAME, (username,))
         result = self.cursor.fetchone()
         return result is not None
+
+    def get_all_ballots(self, election_title) -> List[Dict]:
+        assert self.get_election_by_title(election_title) is not None
+        self.cursor.execute(SELECT_ALL_BALLOTS, (election_title,))
+        output = []
+        for result in self.cursor.fetchall():
+            output.append({
+                "voter_uuid": result[0],
+                "ballot": result[1],
+                "ballot_signature": result[2],
+                "election_title": result[3]
+            })
+
+        return output
 
     def close(self):
         self.connection.close()

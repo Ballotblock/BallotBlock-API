@@ -30,8 +30,8 @@ request with the following format:
     "{
         "description": "Pick your favorite color / shape.",
         "election_title": "Favorite Color and Shape Election",
-        "start_date": 1521507388,
-        "end_date": 1522371388,
+        "start_date": '2018-03-30T18:48:21.940478-07:00',
+        "end_date": '2018-03-31T18:50:29.522627-07:00',
         "questions":
          [
             ["Favorite Color?", ["Red", "Blue"]],
@@ -45,8 +45,8 @@ request with the following format:
 
 * ``master_ballot`` should be a JSON object in string (UTF-8) format.
     * ``description`` should be a UTF-8 string explaining the purpose of the election.
-    * ``start_date`` should be a unix timestamp in seconds indicating the start date of the election.
-    * ``end_date`` should be a unix timestamp in seconds indicating the end date of the election.
+    * ``start_date`` should be a  ISO 8601 string indicating the start date of the election.
+    * ``end_date`` should be a ISO 8601 string seconds indicating the end date of the election.
     * ``questions`` should be a array of arrays. The first value should be the question, the second value should be an array of expected answers. (TODO: Consider changing this so that the key is the question and the value is an array of allowed answers)
 * ``creator_public_key`` key should be a **ecdsa.SECP256k1** public key in **base64** format.
 * ``master_ballot_signature`` should be the ``master_ballot`` string but signed using the ``creator_public_key``'s corresponding private key.

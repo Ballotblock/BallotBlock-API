@@ -90,3 +90,10 @@ ELECTION_VOTER_BALLOT_JSON_IS_MALFORMED = \
 ELECTION_VOTER_BALLOT_SIGNING_MISMATCH = \
     HttpCode("Could not verify that this voter ballot was signed using the provided signature, text, and publickey",
              status.HTTP_400_BAD_REQUEST)
+
+#
+# Result Tallying
+#
+
+ELECTION_CANT_TALLY_VOTING_STILL_IN_PROGRESS = \
+    HttpCode("Cannot tally up all the votes. The election is still in progress.", status.HTTP_400_BAD_REQUEST)
