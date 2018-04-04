@@ -6,7 +6,6 @@
 #
 
 from src.account_types import AccountType
-from src.server import app
 from src.cookie_encryptor import CookieEncryptor
 import unittest
 import json
@@ -18,7 +17,7 @@ class CookieEncryptorTest(unittest.TestCase):
         self.secret_password = "SECRET_PASSWORD"
         self.cookie_encryptor = CookieEncryptor(self.secret_password)
 
-        # Create an account token
+        # Mimick
         self.token = {
             "username": "Sparky",
             "password": "Student Loans",

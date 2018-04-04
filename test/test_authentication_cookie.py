@@ -7,19 +7,34 @@
 from src.cookie_encryptor import CookieEncryptor
 from src.authentication_cookie import AuthenticationCookie
 from src.account_types import AccountType
+from test.config import test_backend
+import json
 import unittest
-import uuid
+import src.intermediary
+
 
 class AuthenticationCookieTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        password = "hunter2"
-        random = '6862cff6-d5f7-440a-a02e-573c4be9f944'.encode('utf-8')
-        self.cookie_encryptor = CookieEncryptor(password)
-        self.token = {
-            "username": "User",
-            "account_type": AccountType.voter,
-            "expires": "never",
-            "authentication": self.cookie_encryptor.encrypt(random).decode('utf-8')
+        # Setup an election
+        self.username = "Alice"
+        self.password = "hunter2"
+        self.app = src.intermediary.start_test(test_backend(), self.password)
+
+        # Setup Authentication Cookie
+        self.auth_token = {
+            'username': self.username,
+            'account_type': AccountType.election_creator.value,
+            'authentication': CookieEncryptor(self.password).encrypt(b"ABC").decode('utf-8')
         }
+
+
+    def test_is_encrypted_by_registration_server(self):
+        assert AuthenticationCookie.is_encrypted_by_registration_server(self.password, {'token': json.dumps(self.auth_token)})
+
+    def test_get_username(self):
+        assert self.username == AuthenticationCookie.get_username({'token': json.dumps(self.auth_token)})
+
+    def test_get_account_type(self):
+        assert AccountType.election_creator == AuthenticationCookie.get_account_type({'token': json.dumps(self.auth_token)})
