@@ -22,6 +22,9 @@ LOGIN_SUCCESSFUL = \
 MISSING_OR_MALFORMED_JSON = \
     HttpCode("JSON was not provided or is non parseable", status.HTTP_400_BAD_REQUEST)
 
+MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE = \
+    HttpCode("The server expects a cookie from the registration server to be sent on each request. ", status.HTTP_400_BAD_REQUEST)
+
 MISSING_LOGIN_PARAMETERS = \
     HttpCode("Missing 'username', 'password', or 'account_type'", status.HTTP_400_BAD_REQUEST)
 
