@@ -20,6 +20,8 @@ ELECTION_DUMMY_RSA_FERNET = {
     'election_public_key': 'LS0tLS1CRUdJTiBSU0EgUFVCTElDIEtFWS0tLS0tCk1JSUJDZ0tDQVFFQTRMTXRzK1RRcVJZRUZONVlJR1JyRWVJQTUxSUU0R0dUZlpvdjRBZ0tYWG5PZzRPd2I5ZTkKK0Jpemw0Rkdqb0ZiSFJPMU5UdGpjeHN4U1hCNHlIb3pocVJtRjJvcGUrNWVRTUxxcEIzbXpNOUdYSmYrWTJtdgpHTVhuVkNoZ1hIYk84bWQwVlE3UGEvZVErQ2lsUXBxK2YzSHVpdnBybi8wTW9VNzV3QmlGTE9vaHlpTDlTcEZMCnZVWUlYRmwwN2ZOM0p6ckNsQmMzOU11OHYxN0RxdnFIelVxN2lSUVZydWVrbXZNOFBXN3laWk9Jc0Z5cGtadFoKSjJsbEpGMTJ5ek8rZ29aWVd1aENhRVRaYkZZTmg3VXNkNGpxZnZpN3Q2SkpJbUtxN1VDbkN1bGVuZ2FYc0dQLwppS3FSVFF2Q0htY0RZWi9aNSsraVZGV0p1ekVabUUvL0JRSURBUUFCCi0tLS0tRU5EIFJTQSBQVUJMSUMgS0VZLS0tLS0K'
 }
 
+JSON_HEADERS = {"Content-Type": "application/json"}
+
 def generate_election_post_data(election_title: str = None,
                                 description: str = None,
                                 start_date: str = None,

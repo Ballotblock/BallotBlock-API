@@ -9,7 +9,7 @@ import json
 import unittest
 import src.intermediary
 from test.config import test_backend
-from test.test_util import generate_election_post_data, ELECTION_DUMMY_RSA_FERNET
+from test.test_util import generate_election_post_data, ELECTION_DUMMY_RSA_FERNET, JSON_HEADERS
 from src.httpcode import *
 from src.crypto_suite import ECDSAKeyPair
 from src.crypto_flow import CryptoFlow
@@ -18,8 +18,6 @@ from src.time_manager import TimeManager
 from src.account_types import AccountType
 from src.cookie_encryptor import CookieEncryptor
 from unittest.mock import MagicMock, patch
-
-JSON_HEADERS = {"Content-Type": "application/json"}
 
 
 class ElectionTest(unittest.TestCase):
@@ -91,7 +89,7 @@ class ElectionTest(unittest.TestCase):
         retrieved_election = json.loads(response.data.decode('utf-8'))
         assert 'election_private_key' not in retrieved_election
 
-    @patch("src.time_manager.TimeManager")
+    @patch("src.time_manager.TimeManager.election_in_progress")
     def test_election_private_key_is_leaked_after_election(self, mock):
         mock.return_value = False
         search = json.dumps({"election_title": self.election_title})

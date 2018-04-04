@@ -10,61 +10,30 @@ import uuid
 import unittest
 import src.intermediary
 from test.config import test_backend
-from test.test_util import generate_election_post_data, generate_voter_post_data, ELECTION_DUMMY_RSA_FERNET
+from test.test_util import generate_election_post_data, generate_voter_post_data, ELECTION_DUMMY_RSA_FERNET, JSON_HEADERS
 from src.httpcode import *
 from src.crypto_suite import ECDSAKeyPair
 from src.crypto_flow import CryptoFlow
-from src.sqlite import SQLiteBackendIO
-from src.sessions.session_manager import SessionManager
 from src.validator import ElectionJsonValidator
-from src.registration import RegistrationServerProvider
 from src.time_manager import TimeManager
-from unittest.mock import Mock, MagicMock
-
-JSON_HEADERS = {"Content-Type": "application/json"}
+from src.account_types import AccountType
+from src.cookie_encryptor import CookieEncryptor
+from unittest.mock import Mock, MagicMock, patch
 
 
 class TallyingTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.registration_provider = RegistrationServerProvider()
-        self.election_json_validator = ElectionJsonValidator()
-        self.session_manager = SessionManager()
-        self.time_manager = TimeManager()
-        self.election_json_validator.is_valid = MagicMock(return_value=(True, ""))
-        self.registration_provider.is_user_registered = MagicMock(return_value=True)
-        self.session_manager.is_logged_in = MagicMock(return_value=True)
-
-        # Configurable Election Data
-        self.election_creator_ecdsa_keys = ECDSAKeyPair()
+        # Election Data
         self.username = "ElectionCreator"
         self.election_title = "TallyingTest"
-        self.election_description = """
-        Verify that we can retreive all ballots and have the system tally them for us
-        """
-
+        self.election_description = "Ballots are counted correctly"
         self.start_date = TimeManager.get_current_time_as_iso_format_string()
         self.end_date = TimeManager.get_current_time_plus_time_delta_in_days_as_iso_8601_str(days=1)
-        self.backend = test_backend()
+        self.election_creator_ecdsa_keys = ECDSAKeyPair()
 
-        CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
-            return_value=ELECTION_DUMMY_RSA_FERNET)
-
-        # Setup an election
-        self.app = src.intermediary.start_test_sqlite(
-            backend_io=self.backend,
-            session_manager=self.session_manager,
-            election_json_validator=self.election_json_validator,
-            registration_provider=self.registration_provider,
-            time_manager=self.time_manager
-        )
-
-    def setUp(self):
-        # Delete all data prior to running the tests
-        self.backend.nuke()
-
-        # Generate an election creation post dictionary suitable for sending to the server
+        # Election Dict
         self.election = generate_election_post_data(
             election_title=self.election_title,
             description=self.election_description,
@@ -77,14 +46,32 @@ class TallyingTest(unittest.TestCase):
             ]
         )
 
-        # Mock ourselves in the system as an Election Creator and send the request
-        self.session_manager.get_username = MagicMock(return_value=self.username)
-        self.session_manager.election_creator_is_logged_in = MagicMock(return_value=True)
-        self.session_manager.voter_is_logged_in = MagicMock(return_value=False)
+        # Test Client
+        self.backend = test_backend()
+        self.password = "Secret"
+        self.app = src.intermediary.start_test(self.backend, self.password)
+
+        # Mocks
+        CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
+            return_value=ELECTION_DUMMY_RSA_FERNET)
+        ElectionJsonValidator.is_valid = MagicMock(return_value=(True, ""))
+
+    def setUp(self):
+        # Delete all data prior to running the tests
+        self.backend.nuke()
+
+        # Mock ourselves in as an ElectionCreator and create an election
+        self.auth_token = {
+            'username': 'ElectionCreator',
+            'account_type': AccountType.election_creator.value,
+            'authentication': CookieEncryptor(self.password).encrypt(b"ABC").decode('utf-8')
+        }
+        self.app.set_cookie('localhost', 'token', json.dumps(self.auth_token))
         response = self.app.post("/api/election/create", headers=JSON_HEADERS, data=json.dumps(self.election))
         assert response.data.decode('utf-8') == ELECTION_CREATED_SUCCESSFULLY.message
         assert response.status_code == ELECTION_CREATED_SUCCESSFULLY.code
 
+        # Mock ourselves in as Voters and cast votes
         self.voters = [
             {"username": "Alice", "answers": ["Red", "Triangle"]},
             {"username": "Bob", "answers": ["Red", "Square"]},
@@ -103,10 +90,14 @@ class TallyingTest(unittest.TestCase):
                 voter_keys=person['keys'],
                 answers=person['answers']
             )
-            # Mock login as that person
-            self.session_manager.election_creator_is_logged_in = MagicMock(return_value=False)
-            self.session_manager.voter_is_logged_in = MagicMock(return_value=True)
-            self.session_manager.get_username = MagicMock(return_value=person['username'])
+
+            self.auth_token = {
+                'username': person['username'],
+                'account_type': AccountType.voter.value,
+                'authentication': CookieEncryptor(self.password).encrypt(b"ABC").decode('utf-8')
+            }
+
+            self.app.set_cookie('localhost', 'token', json.dumps(self.auth_token))
 
             # Cast a vote as this person!
             response = self.app.post("/api/election/vote", headers=JSON_HEADERS, data=json.dumps(person['ballot']))
@@ -130,8 +121,9 @@ class TallyingTest(unittest.TestCase):
             assert uuid_found, "UUID: {0} was returned when this person casted their vote but isn't" \
                                "present in the total list!".format(person['voter_uuid'])
 
-    def test_all_four_ballots_are_retrieved_decrypted_after_election_ends(self):
-        self.time_manager.election_in_progress = MagicMock(return_value=False)
+    @patch("src.time_manager.TimeManager.election_in_progress")
+    def test_all_four_ballots_are_retrieved_decrypted_after_election_ends(self, mock):
+        mock.return_value = False
         response = self.app.get("/api/ballot/all", data=json.dumps({'election_title': self.election_title}))
         all_ballots = json.loads(response.data.decode('utf-8'))
 
@@ -153,8 +145,9 @@ class TallyingTest(unittest.TestCase):
             assert uuid_found, "UUID: {0} was returned when this person casted their vote but isn't" \
                                "present in the total list!".format(person['voter_uuid'])
 
-    def test_tallying_election_adds_answers_correctly(self):
-        self.time_manager.election_in_progress = Mock(return_value=False)
+    @patch("src.time_manager.TimeManager.election_in_progress")
+    def test_tallying_election_adds_answers_correctly(self, mock):
+        mock.return_value = False
         response = self.app.get("/api/election/tally", data=json.dumps({'election_title': self.election_title}))
         tally_results = json.loads(response.data.decode('utf-8'))
         # TODO: Don't hardcode so much in this test

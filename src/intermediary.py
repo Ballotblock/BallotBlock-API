@@ -163,9 +163,9 @@ def election_get_by_title():
 
 @app.route("/api/election/vote", methods=["POST"])
 def election_cast_vote():
-    # Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
@@ -194,7 +194,7 @@ def election_cast_vote():
         return httpcode.ELECTION_NOT_FOUND
 
     # Verify the user has not already participated in this election
-    username = SESSION_MANAGER.get_username(session)
+    username = AuthenticationCookie.get_username(request.cookies)
     if BACKEND_IO.has_user_participated_in_election(username, ballot['election_title']):
         return httpcode.ELECTION_VOTER_VOTED_ALREADY
 
@@ -234,9 +234,9 @@ def election_cast_vote():
 
 @app.route("/api/ballot/get", methods=["GET", "POST"])
 def get_voter_ballot_by_voter_uuid():
-    # Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
@@ -257,7 +257,7 @@ def get_voter_ballot_by_voter_uuid():
 
     # If the election has ended, decrypt the users ballot and return
     # that instead.
-    if not TIME_MANAGER.election_in_progress(election["start_date"], election['end_date']):
+    if not TimeManager.election_in_progress(election["start_date"], election['end_date']):
         result['ballot'] = CryptoFlow.decrypt_ballot(
             encrypted_ballot_str=result['ballot'],
             election_rsa_public_key_b64=election['election_public_key'],
@@ -301,9 +301,9 @@ def get_all_ballots_in_election():
 
     # TODO: Return an error if the election hasn't started yet.
 
-    # 0) Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # 0) Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # 1) Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
@@ -324,7 +324,7 @@ def get_all_ballots_in_election():
     all_ballots = BACKEND_IO.get_all_ballots(content['election_title'])
 
     # 5) If the election is over, decrypt all ballots.
-    if not TIME_MANAGER.election_in_progress(election["start_date"], election['end_date']):
+    if not TimeManager.election_in_progress(election["start_date"], election['end_date']):
         for ballot in all_ballots:
             ballot['ballot'] = CryptoFlow.decrypt_ballot(
                 encrypted_ballot_str=ballot['ballot'],
@@ -372,10 +372,9 @@ def tally_results_for_given_election():
                      ]
                  }
     """
-
-    # 0) Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # 1) Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
@@ -393,7 +392,7 @@ def tally_results_for_given_election():
         return httpcode.ELECTION_NOT_FOUND
 
     # 4) If the election is still in process return an error
-    if TIME_MANAGER.election_in_progress(election["start_date"], election['end_date']):
+    if TimeManager.election_in_progress(election["start_date"], election['end_date']):
         return httpcode.ELECTION_CANT_TALLY_VOTING_STILL_IN_PROGRESS
 
     # 5) Request each ballot from the backend (no order is required)
@@ -417,9 +416,9 @@ def tally_results_for_given_election():
 
 @app.route("/api/election/past", methods=["GET"])
 def get_past_elections():
-    # Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # Retrieve all elections
     all_elections = BACKEND_IO.get_all_elections()
@@ -435,9 +434,9 @@ def get_past_elections():
 
 @app.route("/api/election/present", methods=["GET"])
 def get_present_elections():
-    # Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # Retrieve all elections
     all_elections = BACKEND_IO.get_all_elections()
@@ -453,9 +452,9 @@ def get_present_elections():
 
 @app.route("/api/election/future", methods=["GET"])
 def get_future_elections():
-    # Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # Retrieve all elections
     all_elections = BACKEND_IO.get_all_elections()

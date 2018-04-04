@@ -14,11 +14,10 @@ from test.test_util import generate_election_post_data, generate_voter_post_data
 from src.httpcode import *
 from src.crypto_suite import ECDSAKeyPair
 from src.crypto_flow import CryptoFlow
-from src.sqlite import SQLiteBackendIO
-from src.sessions.session_manager import SessionManager
 from src.validator import ElectionJsonValidator
-from src.registration import RegistrationServerProvider
 from src.time_manager import TimeManager
+from src.account_types import AccountType
+from src.cookie_encryptor import CookieEncryptor
 from unittest.mock import MagicMock
 from datetime import datetime, timezone, timedelta
 
@@ -28,46 +27,27 @@ JSON_HEADERS = {"Content-Type": "application/json"}
 class ElectionPastPresentFutureTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.registration_provider = RegistrationServerProvider()
-        self.election_json_validator = ElectionJsonValidator()
-        self.session_manager = SessionManager()
-        self.time_manager = TimeManager()
-
-        # Mock out election validation (currently not undertest)
-        self.election_json_validator.is_valid = MagicMock(return_value=(True, ""))
-        self.registration_provider.is_user_registered = MagicMock(return_value=True)
-        self.session_manager.is_logged_in = MagicMock(return_value=True)
-
-        # Election Data
-        self.election_creator_ecdsa_keys = ECDSAKeyPair()
-        self.username = "ElectionCreator"
-        self.election_title = "ElectionPastPresentFutureTest"
-        self.election_description = "Test that we can retrieve elections via their start / end dates."
-
+        # Setup Authentication Cookie
+        self.password = "Secret"
         self.backend = test_backend()
-        self.start_date = TimeManager.get_current_time_as_iso_format_string()
-        self.end_date = TimeManager.get_current_time_plus_time_delta_in_days_as_iso_8601_str(days=1)
+        self.app = src.intermediary.start_test(self.backend, self.password)
 
-        # Setup testing app
-        self.app = src.intermediary.start_test_sqlite(
-            backend_io=self.backend,
-            session_manager=self.session_manager,
-            election_json_validator=self.election_json_validator,
-            registration_provider=self.registration_provider,
-            time_manager=self.time_manager
-        )
+        self.auth_token = {
+            'username': 'ElectionCreator',
+            'account_type': AccountType.election_creator.value,
+            'authentication': CookieEncryptor(self.password).encrypt(b"ABC").decode('utf-8')
+        }
+
+        self.app.set_cookie('localhost', 'token', json.dumps(self.auth_token))
+
+        # Mocks
+        ElectionJsonValidator.is_valid = MagicMock(return_value=(True, ""))
+        CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
+            return_value=ELECTION_DUMMY_RSA_FERNET)
 
     def setUp(self):
         # Delete all data prior to running the test
         self.backend.nuke()
-
-        self.election = generate_election_post_data(
-            election_title=self.election_title,
-            description=self.election_description,
-            start_date=self.start_date,
-            end_date=self.end_date,
-            creator_keys=self.election_creator_ecdsa_keys,
-            questions=["Red or Blue?", ["Red", "Blue"]])
 
         elections = [
             {"election_title": "Past Election 1",
@@ -125,15 +105,15 @@ class ElectionPastPresentFutureTest(unittest.TestCase):
              },
         ]
 
-        self.session_manager.get_username = MagicMock(return_value=self.username)
-        self.session_manager.election_creator_is_logged_in = MagicMock(return_value=True)
-        self.session_manager.voter_is_logged_in = MagicMock(return_value=False)
-
         for election in elections:
+            # Stub the RSA Fernet Key with a unique one each time.
             CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
                 return_value=election['stub_rsa'])
+
+            # Create the election
             response = self.app.post("/api/election/create", headers=JSON_HEADERS,
                                      data=json.dumps(generate_election_post_data(**election)))
+
             assert response.data.decode('utf-8') == ELECTION_CREATED_SUCCESSFULLY.message
             assert response.status_code == ELECTION_CREATED_SUCCESSFULLY.code
 
