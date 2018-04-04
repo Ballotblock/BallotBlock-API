@@ -46,49 +46,16 @@ def start_test_sqlite(backend_io: BackendIO = None,
         raise ValueError("backend_io can't be none")
 
     global BACKEND_IO
-    global SESSION_MANAGER
-    global REGISTRATION_PROVIDER
     global ELECTION_JSON_VALIDATOR
     global TIME_MANAGER
 
     BACKEND_IO = backend_io
-    SESSION_MANAGER = session_manager
-    REGISTRATION_PROVIDER = registration_provider
     ELECTION_JSON_VALIDATOR = election_json_validator
     TIME_MANAGER = time_manager
 
     test_app = app.test_client()
     test_app.testing = True
     return test_app
-
-
-#
-# Login
-#
-
-@app.route("/api/login", methods=["GET", "POST"])
-def login() -> httpcode.HttpCode:
-    # JSON is missing or malformed
-    content = request.get_json(silent=True, force=True)
-    if content is None:
-        return httpcode.MISSING_OR_MALFORMED_JSON
-
-    # At least one required login parameter is missing
-    for key in content:
-        if key not in required_keys.REQUIRED_LOGIN_KEYS:
-            return httpcode.MISSING_LOGIN_PARAMETERS
-
-    # The registration server says this user is invalid:
-    if not REGISTRATION_PROVIDER.is_user_registered(content['username'], content['password']):
-        return httpcode.USER_NOT_REGISTERED
-
-    # The user is already authenticated
-    if SESSION_MANAGER.is_logged_in(session):
-        return httpcode.USER_ALREADY_AUTHENTICATED
-
-    # The user is not already authenticated, authenticate them and return OK
-    SESSION_MANAGER.login(content['username'], content["account_type"], session)
-    return httpcode.LOGIN_SUCCESSFUL
 
 
 #
