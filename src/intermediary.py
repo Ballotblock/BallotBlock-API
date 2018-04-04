@@ -7,51 +7,40 @@
 from flask import Flask, request, jsonify, session
 from src import httpcode
 from src.validator import ElectionJsonValidator
-from src.sessions import SessionManager
-from src.registration import RegistrationServerProvider
+from src.authentication_cookie import AuthenticationCookie
 from src.interfaces import BackendIO
 from src import required_keys
 from src.crypto_flow import CryptoFlow
 from src.time_manager import TimeManager
 from src.tally_machine import TallyMachine
+from src.account_types import AccountType
 import json
 import uuid
 
 app = Flask(__name__)
 
 URL = "0.0.0.0"
-DEBUG_URL = "127.0.0.1"
 NAME = "BallotBlock API"
 PORT = 8080
-
-# Modules
 BACKEND_IO = None
-SESSION_MANAGER = SessionManager()
-REGISTRATION_PROVIDER = RegistrationServerProvider()
-ELECTION_JSON_VALIDATOR = ElectionJsonValidator()
-TIME_MANAGER = TimeManager()
+SHARED_PASSWORD = "BallotBlockDefaultPassword" # Change this prior to deploying system.
 
 app.config['SECRET_KEY'] = str(uuid.uuid4())
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
 
 
-def start_test_sqlite(backend_io: BackendIO = None,
-                      session_manager=SessionManager(),
-                      registration_provider=RegistrationServerProvider(),
-                      election_json_validator=ElectionJsonValidator(),
-                      time_manager=TimeManager()
-                      ):
-    if backend_io is None:
-        raise ValueError("backend_io can't be none")
-
+def start_test(backend_io: BackendIO, shared_password: str = None):
+    assert backend_io, "'backend_io' cannot be None"
     global BACKEND_IO
-    global ELECTION_JSON_VALIDATOR
-    global TIME_MANAGER
 
+    # Setup BackendIO
     BACKEND_IO = backend_io
-    ELECTION_JSON_VALIDATOR = election_json_validator
-    TIME_MANAGER = time_manager
+
+    # Setup Password
+    if shared_password:
+        global SHARED_PASSWORD
+        SHARED_PASSWORD = shared_password
 
     test_app = app.test_client()
     test_app.testing = True
@@ -72,12 +61,12 @@ def election_create() -> httpcode.HttpCode:
     about the expected json election format.
     """
 
-    # Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # Check if a voter is logged in, report an error if they are
-    if SESSION_MANAGER.voter_is_logged_in(session):
+    if AuthenticationCookie.get_account_type(request.cookies) == AccountType.voter:
         return httpcode.VOTER_CANNOT_CREATE_ELECTION
 
     # Check if any JSON was supplied at all
@@ -102,7 +91,7 @@ def election_create() -> httpcode.HttpCode:
             return httpcode.ELECTION_BALLOT_MISSING_TITLE_DESCRIPTION_DATE_OR_QUESTIONS
 
     # TODO: Verify that the master_ballot itself contains valid data only!
-    valid, reason = ELECTION_JSON_VALIDATOR.is_valid(master_ballot)
+    valid, reason = ElectionJsonValidator.is_valid(master_ballot)
     if not valid:
         return reason
 
@@ -123,7 +112,7 @@ def election_create() -> httpcode.HttpCode:
     master_ballot['questions'] = json.dumps(master_ballot['questions'])
     BACKEND_IO.create_election(
         master_ballot,
-        creator_username=SESSION_MANAGER.get_username(session),
+        creator_username=AuthenticationCookie.get_username(request.cookies),
         creator_master_ballot_signature=content['master_ballot_signature'],
         creator_public_key_b64=content['creator_public_key'],
         election_private_rsa_key=election_crypto['election_private_key'],
@@ -146,9 +135,9 @@ def election_create() -> httpcode.HttpCode:
 
 @app.route("/api/election/get_by_title", methods=["GET"])
 def election_get_by_title():
-    # Check if anyone is logged in
-    if not SESSION_MANAGER.is_logged_in(session):
-        return httpcode.LOG_IN_FIRST
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
 
     # Check if any JSON was supplied at all
     content = request.get_json(silent=True, force=True)
@@ -166,7 +155,7 @@ def election_get_by_title():
         return httpcode.ELECTION_NOT_FOUND
 
     # Remove the private_key if the election hasn't ended yet.
-    if TIME_MANAGER.election_in_progress(result["start_date"], result['end_date']):
+    if TimeManager.election_in_progress(result["start_date"], result['end_date']):
         result.pop('election_private_key')
 
     return jsonify(result), 200
