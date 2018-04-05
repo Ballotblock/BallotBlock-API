@@ -25,6 +25,9 @@ MISSING_OR_MALFORMED_JSON = \
 MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE = \
     HttpCode("The server expects a cookie from the registration server to be sent on each request. ", status.HTTP_400_BAD_REQUEST)
 
+VALID_AUTHENTICATION_COOKIE = \
+    HttpCode("The server can verify your authentication cookie", status.HTTP_200_OK)
+
 MISSING_LOGIN_PARAMETERS = \
     HttpCode("Missing 'username', 'password', or 'account_type'", status.HTTP_400_BAD_REQUEST)
 

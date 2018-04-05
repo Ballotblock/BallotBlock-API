@@ -46,6 +46,18 @@ def start_test(backend_io: BackendIO, shared_password: str = None):
     test_app.testing = True
     return test_app
 
+#
+#
+#
+@app.route("/api/authentication", methods=["POST"])
+def cookie_has_valid_authentication():
+    # Verify the user's provided authentication cookie.
+    if not AuthenticationCookie.is_encrypted_by_registration_server(SHARED_PASSWORD, request.cookies):
+        return httpcode.MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE
+
+    return httpcode.VALID_AUTHENTICATION_COOKIE
+
+
 
 #
 # Elections
