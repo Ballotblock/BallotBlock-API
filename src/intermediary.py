@@ -47,8 +47,9 @@ def start_test(backend_io: BackendIO, shared_password: str = None):
     return test_app
 
 #
+# Authentication
 #
-#
+
 @app.route("/api/authentication", methods=["POST"])
 def cookie_has_valid_authentication():
     # Verify the user's provided authentication cookie.
