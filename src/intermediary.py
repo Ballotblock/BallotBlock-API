@@ -16,8 +16,10 @@ from src.tally_machine import TallyMachine
 from src.account_types import AccountType
 import json
 import uuid
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+CORS(app)
 
 URL = "0.0.0.0"
 NAME = "BallotBlock API"
@@ -28,6 +30,32 @@ SHARED_PASSWORD = "BallotBlockDefaultPassword" # Change this prior to deploying 
 app.config['SECRET_KEY'] = str(uuid.uuid4())
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
+
+
+def start(backend_io: BackendIO,
+          shared_password: str = None,
+          url: str = None,
+          port: int = None):
+
+    assert backend_io, "'backend_io' cannot be None"
+    global BACKEND_IO
+
+    # Setup BackendIO
+    BACKEND_IO = backend_io
+
+    if shared_password:
+        global SHARED_PASSWORD
+        SHARED_PASSWORD = shared_password
+
+    if url:
+        global URL
+        URL = url
+
+    if port:
+        global PORT
+        PORT = port
+
+    app.run(URL, PORT)
 
 
 def start_test(backend_io: BackendIO, shared_password: str = None):
