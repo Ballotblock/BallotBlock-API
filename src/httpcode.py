@@ -97,6 +97,9 @@ ELECTION_VOTER_BALLOT_SIGNING_MISMATCH = \
     HttpCode("Could not verify that this voter ballot was signed using the provided signature, text, and publickey",
              status.HTTP_400_BAD_REQUEST)
 
+ELECTION_IS_INACTIVE = \
+    HttpCode("You cannot vote in this election, it has already ended", status.HTTP_400_BAD_REQUEST)
+
 #
 # Result Tallying
 #

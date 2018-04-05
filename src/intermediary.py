@@ -210,8 +210,11 @@ def election_cast_vote():
     if BACKEND_IO.has_user_participated_in_election(username, ballot['election_title']):
         return httpcode.ELECTION_VOTER_VOTED_ALREADY
 
+    # Verify that the election is still in progress
+    if not TimeManager.election_in_progress(election['start_date'], election['end_date']):
+        return httpcode.ELECTION_IS_INACTIVE
+
     # TODO: Verify that the provided answers match the question options!
-    # TODO: Verify that the election hasn't ended already
 
     # Verify that the user signed their ballot data correctly
     if not CryptoFlow.verify_data_is_signed_ecdsa(
