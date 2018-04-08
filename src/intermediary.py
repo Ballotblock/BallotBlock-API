@@ -55,3 +55,5 @@ def start_test(backend_io: BackendIO, shared_password: str = None):
     test_app.testing = True
     return test_app
 
+if __name__ == '__main__':
+    app.run(debug=True)
