@@ -10,7 +10,6 @@ from src.settings import SETTINGS
 from src.crypto_flow import CryptoFlow
 from src.account_types import AccountType
 from src.authentication_cookie import AuthenticationCookie
-from src.validator.election_json_validator import ElectionJsonValidator
 from src.time_manager import TimeManager
 import json
 
@@ -57,9 +56,6 @@ def election_create() -> httpcode.HttpCode:
             return httpcode.ELECTION_BALLOT_MISSING_TITLE_DESCRIPTION_DATE_OR_QUESTIONS
 
     # TODO: Verify that the master_ballot itself contains valid data only!
-    valid, reason = ElectionJsonValidator.is_valid(master_ballot)
-    if not valid:
-        return reason
 
     # Verify an election with this name does not already exist
     if SETTINGS['BACKEND_IO'].get_election_by_title(master_ballot["election_title"]) is not None:

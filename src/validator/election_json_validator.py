@@ -44,6 +44,8 @@ class ElectionJsonValidator(JsonValidator):
                  why this election_json is valid / invalid.
         """
 
+        return True # TODO: All json is considered valid right now! Need to fix.
+
         # Ensure all keys are present in election json
         at_least_one_key_missing = all(k not in election_json.keys() for k in _REQUIRED_KEYS)
         if at_least_one_key_missing:
