@@ -2,6 +2,9 @@ from flask import Flask
 app = Flask(__name__)
 
 
-# import intermediary for sqllite backend
-# import hyperledger_intermediary for hyperledger backend
+"""
+Change the line below to switch to sqllite backend
+Below is the line to change it to: 
+from .intermediary import * 
+"""
 from src import hyperledger_intermediary
