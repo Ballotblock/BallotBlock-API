@@ -116,3 +116,5 @@ intermediary.pyproj.user
 *.config
 *.suo
 *.suo
+*.suo
+.vs/intermediary/v15/.suo
