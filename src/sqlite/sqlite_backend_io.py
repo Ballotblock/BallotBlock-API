@@ -154,5 +154,30 @@ class SQLiteBackendIO(BackendIO):
 
         return output
 
+    def get_all_elections(self):
+        self.cursor.execute(SELECT_ALL_ELECTIONS)
+        output = []
+        for result in self.cursor.fetchall():
+            output.append({
+                "election_title": result[0],
+                "description": result[1],
+                "start_date": result[2],
+                "end_date": result[3],
+                "questions": result[4],
+                "creator_username": result[5],
+                "master_ballot_signature": result[6],
+                "creator_public_key": result[7],
+                "election_public_key": result[8],
+                "election_private_key": result[9],
+                "election_encrypted_fernet_key": result[10]
+            })
+        return output
+
+    def nuke(self):
+        self.cursor.execute(DELETE_ALL_BALLOT)
+        self.cursor.execute(DELETE_ALL_ELECTION)
+        self.cursor.execute(DELETE_ALL_ELECTION_PARTICIPATION)
+        self.connection.commit()
+
     def close(self):
         self.connection.close()

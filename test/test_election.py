@@ -8,73 +8,59 @@
 import json
 import unittest
 import src.intermediary
-from test.test_util import generate_election_post_data, generate_voter_post_data, ELECTION_DUMMY_RSA_FERNET
+from test.config import test_backend
+from test.test_util import generate_election_post_data, ELECTION_DUMMY_RSA_FERNET, JSON_HEADERS
 from src.httpcode import *
 from src.crypto_suite import ECDSAKeyPair
 from src.crypto_flow import CryptoFlow
-from src.sqlite import SQLiteBackendIO
-from src.sessions.session_manager import SessionManager
 from src.validator import ElectionJsonValidator
-from src.registration import RegistrationServerProvider
 from src.time_manager import TimeManager
-from unittest.mock import MagicMock
-
-JSON_HEADERS = {"Content-Type": "application/json"}
+from src.account_types import AccountType
+from src.cookie_encryptor import CookieEncryptor
+from unittest.mock import MagicMock, patch
 
 
 class ElectionTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.registration_provider = RegistrationServerProvider()
-        self.election_json_validator = ElectionJsonValidator()
-        self.session_manager = SessionManager()
-        self.time_manager = TimeManager()
-        self.election_json_validator.is_valid = MagicMock(return_value=(True, ""))
-        self.registration_provider.is_user_registered = MagicMock(return_value=True)
-        self.session_manager.is_logged_in = MagicMock(return_value=True)
-
         # Election Data
-        self.election_creator_ecdsa_keys = ECDSAKeyPair()
         self.username = "ElectionCreator"
         self.election_title = "ElectionTest"
-        self.election_description = """
-            This test verifies that:
-            1) The user can create an election
-            2) The user can retrieve that election and all the details are unencrypted
-               / the same.
-            3) If the user retrieves the election PRIOR to the election conclusion
-               then the private key is not leaked.
-            4) If the user retrieves the election after the election conclusion
-        """
-
+        self.election_description = "Election Creation, Retrieval, Encryption, Decryption"
         self.start_date = TimeManager.get_current_time_as_iso_format_string()
         self.end_date = TimeManager.get_current_time_plus_time_delta_in_days_as_iso_8601_str(days=1)
-
-
-    def setUp(self):
-        CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
-            return_value=ELECTION_DUMMY_RSA_FERNET)
-
-        # Setup an election
-        self.app = src.intermediary.start_test_sqlite(
-            backend_io=SQLiteBackendIO(":memory:"),
-            session_manager=self.session_manager,
-            election_json_validator=self.election_json_validator,
-            registration_provider=self.registration_provider,
-            time_manager=self.time_manager
-        )
-
+        self.election_creator_ecdsa_keys = ECDSAKeyPair()
+        self.questions = ["A or B?", ["A", "B"]]
         self.election = generate_election_post_data(
             election_title=self.election_title,
             description=self.election_description,
             start_date=self.start_date,
             end_date=self.end_date,
             creator_keys=self.election_creator_ecdsa_keys,
-            questions=["Red or Blue?", ["Red", "Blue"]])
+            questions=self.questions)
 
-        self.session_manager.get_username = MagicMock(return_value=self.username)
-        self.session_manager.election_creator_is_logged_in = MagicMock(return_value=True)
-        self.session_manager.voter_is_logged_in = MagicMock(return_value=False)
+        # Test Data
+        self.password = "Secret"
+        self.backend = test_backend()
+        self.app = src.intermediary.start_test(self.backend, self.password)
+
+        # Setup Authentication Cookie
+        self.auth_token = {
+            'username': 'ElectionCreator',
+            'account_type': AccountType.election_creator.value,
+            'authentication': CookieEncryptor(self.password).encrypt(b"ABC").decode('utf-8')
+        }
+
+        self.app.set_cookie('localhost', 'token', json.dumps(self.auth_token))
+
+        # Mocks
+        ElectionJsonValidator.is_valid = MagicMock(return_value=(True, ""))
+        CryptoFlow.generate_election_creator_rsa_keys_and_encrypted_fernet_key_dict = MagicMock(
+            return_value=ELECTION_DUMMY_RSA_FERNET)
+
+    def setUp(self):
+        # Reset the backend and create a new election each test.
+        self.backend.nuke()
         response = self.app.post("/api/election/create", headers=JSON_HEADERS, data=json.dumps(self.election))
         assert response.data.decode('utf-8') == ELECTION_CREATED_SUCCESSFULLY.message
         assert response.status_code == ELECTION_CREATED_SUCCESSFULLY.code
@@ -84,7 +70,6 @@ class ElectionTest(unittest.TestCase):
         response = self.app.get("/api/election/get_by_title", headers=JSON_HEADERS, data=search)
         assert response.status_code == 200
         retrieved_election = json.loads(response.data.decode('utf-8'))
-
         assert retrieved_election['creator_username'] == self.username
         assert retrieved_election['creator_public_key'] == self.election_creator_ecdsa_keys \
             .get_public_key_b64().decode('utf-8')
@@ -104,12 +89,11 @@ class ElectionTest(unittest.TestCase):
         retrieved_election = json.loads(response.data.decode('utf-8'))
         assert 'election_private_key' not in retrieved_election
 
-    def test_election_private_key_is_leaked_after_election(self):
-        fn = self.time_manager.election_in_progress
-        self.time_manager.election_in_progress = MagicMock(return_value=False)
+    @patch("src.time_manager.TimeManager.election_in_progress")
+    def test_election_private_key_is_leaked_after_election(self, mock):
+        mock.return_value = False
         search = json.dumps({"election_title": self.election_title})
         response = self.app.get("/api/election/get_by_title", headers=JSON_HEADERS, data=search)
-        self.time_manager.election_in_progress = fn
         assert response.status_code == 200
         retrieved_election = json.loads(response.data.decode('utf-8'))
         assert 'election_private_key' in retrieved_election

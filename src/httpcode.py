@@ -22,6 +22,12 @@ LOGIN_SUCCESSFUL = \
 MISSING_OR_MALFORMED_JSON = \
     HttpCode("JSON was not provided or is non parseable", status.HTTP_400_BAD_REQUEST)
 
+MISSING_OR_MALFORMED_AUTHENTICATION_COOKIE = \
+    HttpCode("The server expects a cookie from the registration server to be sent on each request. ", status.HTTP_400_BAD_REQUEST)
+
+VALID_AUTHENTICATION_COOKIE = \
+    HttpCode("The server can verify your authentication cookie", status.HTTP_200_OK)
+
 MISSING_LOGIN_PARAMETERS = \
     HttpCode("Missing 'username', 'password', or 'account_type'", status.HTTP_400_BAD_REQUEST)
 
@@ -90,6 +96,9 @@ ELECTION_VOTER_BALLOT_JSON_IS_MALFORMED = \
 ELECTION_VOTER_BALLOT_SIGNING_MISMATCH = \
     HttpCode("Could not verify that this voter ballot was signed using the provided signature, text, and publickey",
              status.HTTP_400_BAD_REQUEST)
+
+ELECTION_IS_INACTIVE = \
+    HttpCode("You cannot vote in this election, it has already ended", status.HTTP_400_BAD_REQUEST)
 
 #
 # Result Tallying

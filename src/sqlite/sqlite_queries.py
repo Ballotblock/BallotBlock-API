@@ -92,6 +92,10 @@ SELECT * from Election WHERE
     election_title = (?)
 """
 
+SELECT_ALL_ELECTIONS = """
+SELECT * from ELECTION
+"""
+
 SELECT_ALL_BALLOTS = """
 SELECT * from BALLOT WHERE
     election_title = (?)
@@ -106,3 +110,11 @@ SELECT_ELECTION_PARTICIPATION_BY_USERNAME = """
 SELECT * from ElectionParticipation WHERE
     username = (?)
 """
+
+#
+# Deletion (Testing)
+#
+
+DELETE_ALL_ELECTION = "DELETE from ELECTION;"
+DELETE_ALL_ELECTION_PARTICIPATION = "DELETE from ElectionParticipation"
+DELETE_ALL_BALLOT = "DELETE from Ballot"
