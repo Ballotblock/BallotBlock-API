@@ -1,25 +1,45 @@
 from flask import Flask, request, jsonify, session
 from src import httpcode
 from src.validator import ElectionJsonValidator
-from src.sessions import SessionManager
-from src.registration import RegistrationServerProvider
 from src.time_manager import TimeManager
 from src import app
 from src.hyperledger.hyperledger_backend_io import HyperledgerBackendIO
 
 
-
-SESSION_MANAGER = SessionManager()
-REGISTRATION_PROVIDER = RegistrationServerProvider()
 ELECTION_JSON_VALIDATOR = ElectionJsonValidator()
 TIME_MANAGER = TimeManager()
-BACKEND = HyperledgerBackendIO
+
+#change the url below is needed
+BACKEND = HyperledgerBackendIO("http://35.197.34.20:3000/api/")
 
 @app.route("/api/election/", methods=["POST"])
 def create_election():
-    ""
-    ""
-    raise NotImplementedError
+    """
+    Allows an election creator to create a new election on the backend.
+
+    accepts the following json schema:
+
+   {
+        "electionTitle": "Election1",
+        "propositions": [{ 
+        		"question" : "question1",
+                "choices" : ["c1", "c2" ],
+                "id" : "Election1question1"
+        	}],
+          "startDate" : "2018-04-29T17:59:12.884Z" , 
+         "endDate" : "2018-04-29T17:59:12.884Z"   
+    }
+    """
+    userId = request.args.get('id')
+    creator = userId;
+    content = request.get_json(silent=True, force=True);
+
+    electionTitle = content['electionTitle']
+    propositions = content['propositions']
+    startDate  = content['startDate']
+    endDate = content['endDate']
+    json = BACKEND.create_election(creator,electionTitle,propositions,startDate,endDate)
+    return jsonify(json)
 
 @app.route("/api/election/current", methods=["GET"])
 def current_election_list():

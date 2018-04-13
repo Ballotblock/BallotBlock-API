@@ -114,3 +114,5 @@ bin/wfastcgi.py
 *.dll
 intermediary.pyproj.user
 *.config
+*.suo
+*.suo
