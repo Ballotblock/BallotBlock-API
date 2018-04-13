@@ -25,13 +25,13 @@ from .filter import Filter
 class HyperledgerBackendIO() :
 
     def __init__(self,url):
-    """
-    This url is the url of the hyperledger composer rest server
-    It may of course be one that is live on a server somewhere or simply hosted locally
-    """
+        """
+        This url is the url of the hyperledger composer rest server
+        It may of course be one that is live on a server somewhere or simply hosted locally
+        """
         self.hyperledger = url
     
-    def create_election(creator,electionTitle,propositions,startDate,endDate):
+    def create_election(self,creator,electionTitle,propositions,startDate,endDate):
         """
         Lets a creator type user create an election
         This methods takes the following parameters:
@@ -60,7 +60,17 @@ class HyperledgerBackendIO() :
         Implementation wise, this method will do a post request to the elections endpoint on the 
         hyperledger composer rest server, and thus creating the "resource" election 
         """
-        raise NotImplementedError
+        url = self.hyperledger + "elections"
+        data = {
+            "electionId" : electionTitle,
+            "organizer" : creator,
+            "propositions" : propositions,
+            "startDate" : startDate,
+            "endDate":endDate,
+            "results" : [-1]
+            }
+        result = requests.post(url,json=data)
+        return result.json(), result.status_code
 
     def create_ballot(self,voter,electionId,answer):
         """
@@ -99,6 +109,8 @@ class HyperledgerBackendIO() :
         - endDate
         - organizer : the creator of the election
         - propositions: a list of questions, each question has a sublist of choices
+        - selections : an array of integerers corresponding to an answer in the choices 
+            "selections is only returned 
         """
         url = self.hyperledger + "elections/" + electionId
         result = requests.get(url)
@@ -129,40 +141,71 @@ class HyperledgerBackendIO() :
         return result.json(), result.status_code
 
     def get_past_elections(self):
-         """
+        """
         Returns the past elections in the hyperledger backend
         """
-
         url = self.hyperledger + "elections?filter="  + Filter.past_filter();
         result = requests.get(url)
         return result.json(), result.status_code
 
-
     def get_upcomming_elections(self):
-       """
+        """
         Returns the upcomming elections in the hyperledger backend
         """
 
-        url = hyperledger + "elections?filter="  + Filter.upcomming_filter();
+        url = self.hyperledger + "elections?filter="  + Filter.upcomming_filter();
         result = requests.get(url)
         return result.json(), result.status_code
 
-    def get_election_results(self,electionId):
-        """
-        Parameters are :
-        - electionId : the title essentially for an election
+    def get_results(self,electionTitle):
+        #first get the election to see if results have been tallied
+        url = self.hyperledger + "elections/" + electionTitle
+        result = requests.get(url)
+        electionResultJson = result.json()
 
-        ToDo:
-        - retrieve the elections object, check if the endDate has passed
-        - check to see if results has been tallied
-        - if not tallied, retrieve all the ballots for that election
-        - loop through and get the results
-        - update the election object using put command on hyperledger
-        - return the election object to the requesting client
-        """
+        electionResult = electionResultJson['results']
+    
+        # if election has not been tallied
+        if electionResult[0] == -1 :
+            # here we query all the ballots, and loop through them all
+            # we also need to update the election object, so that the next 
+            # request won't have to tally again
 
-        raise NotImplementedError
+            propositions = electionResultJson['propositions']
+            # print(propositions)
+            tally = []
+            questions = [] #each index corresponds to a question, and the value at the index corresponds to the number of choices for that question
+            for prop in propositions:
+                choices =  prop['choices']
+                questions.append(len(choices));
+                for choice in choices:
+                    tally.append(0)
+
+
+            electionTitle = quote(electionTitle)
+            resource = "resource:org.hyperledger_composer.ballots.elections#" + electionTitle
+            resource = quote(resource)
+            url = self.hyperledger + "queries/getElectionBallots?election=" + resource
+            result = requests.get(url)
+            ballotJson = result.json()
+            for ballot in ballotJson:
+                selections = ballot['selections']
+                print(selections)
+                # update tally
+                for i in range(len(selections)):
+                    index = selections[i]
+                    if( i  > 0):
+                        index = questions[i-1]  + selections[i]
+                    tally[index] += 1
+    
+            electionResultJson['results'] = tally
+
+            #update hyperledger
+            url = self.hyperledger + "elections/" + electionTitle
+            response = requests.put(url,json=electionResultJson)
+            print(response.json())
+        return electionResultJson
 
 
 
-                                                        )
+

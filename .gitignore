@@ -107,3 +107,10 @@ ENV/
 .pytest_cache/*
 lastfailed
 nodeids
+*.pyproj
+*.cache
+obj/Debug/intermediary.pyproj.FileListAbsolute.txt
+bin/wfastcgi.py
+*.dll
+intermediary.pyproj.user
+*.config
